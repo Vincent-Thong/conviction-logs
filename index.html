@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conviction Logs — Investment Journal</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+<body>
+
+  <!-- ── Navigation ─────────────────────────────────── -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="nav-logo-primary">Conviction Logs</span>
+        <span class="nav-logo-sub">Investment Journal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link active">Dashboard</a>
+        <a href="portfolio.html" class="nav-link">Portfolio</a>
+        <a href="journal.html"   class="nav-link">Journal</a>
+        <a href="watchlist.html" class="nav-link">Watchlist</a>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-ghost btn-sm" onclick="window.location='journal.html?new=1'">+ New Entry</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main ───────────────────────────────────────── -->
+  <main class="page-wrapper">
+    <div class="container">
+
+      <!-- Hero -->
+      <div class="dashboard-hero section animate-up">
+        <div class="hero-greeting">
+          <span class="hero-date" id="hero-date"></span>
+        </div>
+        <h1 class="hero-title">
+          Good morning.<br />
+          <span>What's your conviction today?</span>
+        </h1>
+        <p class="hero-sub">Track your ideas, document your thesis, and hold yourself accountable.</p>
+      </div>
+
+      <!-- Stat row -->
+      <div class="stats-grid animate-up delay-1">
+        <div class="stat-tile">
+          <div class="stat-label">Open Positions</div>
+          <div class="stat-value" id="stat-positions">—</div>
+          <div class="stat-delta">Across HK &amp; US markets</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">Journal Entries</div>
+          <div class="stat-value" id="stat-entries">—</div>
+          <div class="stat-delta">Ideas documented</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">Watchlist</div>
+          <div class="stat-value" id="stat-watchlist">—</div>
+          <div class="stat-delta">Stocks on radar</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-label">Avg Conviction</div>
+          <div class="stat-value" id="stat-conviction">—</div>
+          <div class="stat-delta">Out of 5</div>
+        </div>
+      </div>
+
+      <!-- Recent Journal Entries -->
+      <section class="section animate-up delay-2">
+        <div class="section-header">
+          <h2 class="section-title">Recent <span>Entries</span></h2>
+          <a href="journal.html" class="btn btn-ghost btn-sm">View All →</a>
+        </div>
+        <div id="recent-entries" class="entries-list">
+          <div class="empty-state">
+            <div class="empty-state-icon">✦</div>
+            <p class="empty-state-title">No entries yet</p>
+            <p class="empty-state-text">Start documenting your investment thesis. Your future self will thank you.</p>
+            <br/>
+            <a href="journal.html?new=1" class="btn btn-primary">Write First Entry</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Watchlist snapshot -->
+      <section class="section animate-up delay-3">
+        <div class="section-header">
+          <h2 class="section-title">Watchlist <span>Snapshot</span></h2>
+          <a href="watchlist.html" class="btn btn-ghost btn-sm">Manage →</a>
+        </div>
+        <div id="watchlist-snapshot" class="watchlist-snapshot">
+          <div class="empty-state">
+            <div class="empty-state-icon">◎</div>
+            <p class="empty-state-title">Watchlist is empty</p>
+            <p class="empty-state-text">Add stocks you're monitoring to keep them front of mind.</p>
+            <br/>
+            <a href="watchlist.html" class="btn btn-ghost">Build Watchlist →</a>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span class="footer-copy">© <span id="footer-year"></span> Conviction Logs</span>
+        <div class="footer-links">
+          <a href="index.html">Dashboard</a>
+          <a href="portfolio.html">Portfolio</a>
+          <a href="journal.html">Journal</a>
+          <a href="watchlist.html">Watchlist</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="js/store.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

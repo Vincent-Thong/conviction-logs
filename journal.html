@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Journal — Conviction Logs</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/journal.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="nav-logo-primary">Conviction Logs</span>
+        <span class="nav-logo-sub">Investment Journal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">Dashboard</a>
+        <a href="portfolio.html" class="nav-link">Portfolio</a>
+        <a href="journal.html"   class="nav-link active">Journal</a>
+        <a href="watchlist.html" class="nav-link">Watchlist</a>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-primary btn-sm" onclick="openNewEntry()">+ New Entry</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-wrapper">
+    <div class="container">
+
+      <div class="section animate-up">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Investment <span>Journal</span></h1>
+            <p class="page-sub">Document your thesis, record your thinking, review your decisions.</p>
+          </div>
+          <div class="journal-filters">
+            <input type="text" id="journal-search" placeholder="Search entries…" class="search-input" />
+            <select id="journal-filter-type" class="filter-select">
+              <option value="all">All Types</option>
+              <option value="thesis">Thesis</option>
+              <option value="review">Review</option>
+              <option value="macro">Macro</option>
+              <option value="earnings">Earnings</option>
+              <option value="note">Note</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Entry list -->
+        <div id="journal-entries" class="journal-grid animate-up delay-1">
+          <div class="empty-state">
+            <div class="empty-state-icon">✦</div>
+            <p class="empty-state-title">Your journal is empty</p>
+            <p class="empty-state-text">Every great investor keeps notes. Start writing your first entry.</p>
+            <br/>
+            <button class="btn btn-primary" onclick="openNewEntry()">Write First Entry</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span class="footer-copy">© <span id="footer-year"></span> Conviction Logs</span>
+        <div class="footer-links">
+          <a href="index.html">Dashboard</a>
+          <a href="portfolio.html">Portfolio</a>
+          <a href="journal.html">Journal</a>
+          <a href="watchlist.html">Watchlist</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- New / Edit Entry Modal -->
+  <div id="entry-modal" class="modal-overlay" style="display:none;">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h2 class="modal-title" id="entry-modal-title">New Journal Entry</h2>
+        <button class="modal-close" onclick="closeModal('entry-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Title *</label>
+            <input type="text" id="entry-title" placeholder="e.g. Tencent — AI monetisation thesis" />
+          </div>
+          <div class="form-group" style="flex:0 0 160px">
+            <label>Entry Type</label>
+            <select id="entry-type">
+              <option value="thesis">Thesis</option>
+              <option value="review">Review</option>
+              <option value="macro">Macro</option>
+              <option value="earnings">Earnings</option>
+              <option value="note">Note</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Related Ticker</label>
+            <input type="text" id="entry-ticker" placeholder="e.g. 0700 or AAPL (optional)" />
+          </div>
+          <div class="form-group" style="flex:0 0 140px">
+            <label>Exchange</label>
+            <select id="entry-exchange">
+              <option value="">—</option>
+              <option value="HK">HK</option>
+              <option value="US">US</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:0 0 160px">
+            <label>Date *</label>
+            <input type="date" id="entry-date" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Conviction Level</label>
+          <div class="conviction-picker" id="entry-conviction-picker">
+            <button class="cpip" data-val="1">1</button>
+            <button class="cpip" data-val="2">2</button>
+            <button class="cpip" data-val="3">3</button>
+            <button class="cpip" data-val="4">4</button>
+            <button class="cpip" data-val="5">5</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Entry *</label>
+          <textarea id="entry-body" placeholder="Write your thesis, observations, or notes here…" rows="10"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Tags (comma-separated)</label>
+          <input type="text" id="entry-tags" placeholder="e.g. AI, China, consumer, value" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('entry-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Entry Modal -->
+  <div id="view-modal" class="modal-overlay" style="display:none;">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <div>
+          <div class="modal-meta" id="view-meta"></div>
+          <h2 class="modal-title" id="view-title"></h2>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-ghost btn-sm" id="view-edit-btn">Edit</button>
+          <button class="modal-close" onclick="closeModal('view-modal')">✕</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="view-body" class="entry-body-content"></div>
+        <div id="view-tags" class="entry-tags-row"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/journal.js"></script>
+</body>
+</html>

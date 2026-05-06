@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Watchlist — Conviction Logs</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/watchlist.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="nav-logo-primary">Conviction Logs</span>
+        <span class="nav-logo-sub">Investment Journal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">Dashboard</a>
+        <a href="portfolio.html" class="nav-link">Portfolio</a>
+        <a href="journal.html"   class="nav-link">Journal</a>
+        <a href="watchlist.html" class="nav-link active">Watchlist</a>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-primary btn-sm" onclick="openAddWatch()">+ Add Stock</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-wrapper">
+    <div class="container">
+
+      <div class="section animate-up">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">Watch<span>list</span></h1>
+            <p class="page-sub">Stocks on your radar — monitor price levels and catalysts.</p>
+          </div>
+          <div class="watchlist-toolbar">
+            <input type="text" id="watch-search" placeholder="Filter stocks…" class="search-input" />
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="HK">HK</button>
+              <button class="filter-btn" data-filter="US">US</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Watchlist cards -->
+        <div id="watchlist-grid" class="watchlist-grid animate-up delay-1">
+          <div class="empty-state">
+            <div class="empty-state-icon">◎</div>
+            <p class="empty-state-title">Watchlist is empty</p>
+            <p class="empty-state-text">Add stocks you're monitoring. Set a price target and note your catalyst.</p>
+            <br/>
+            <button class="btn btn-primary" onclick="openAddWatch()">Add First Stock</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span class="footer-copy">© <span id="footer-year"></span> Conviction Logs</span>
+        <div class="footer-links">
+          <a href="index.html">Dashboard</a>
+          <a href="portfolio.html">Portfolio</a>
+          <a href="journal.html">Journal</a>
+          <a href="watchlist.html">Watchlist</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Add / Edit Watchlist Modal -->
+  <div id="add-watch-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="watch-modal-title">Add to Watchlist</h2>
+        <button class="modal-close" onclick="closeModal('add-watch-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ticker Symbol *</label>
+            <input type="text" id="watch-ticker" placeholder="e.g. 9988 or NVDA" />
+          </div>
+          <div class="form-group" style="flex:0 0 140px">
+            <label>Exchange *</label>
+            <select id="watch-exchange">
+              <option value="HK">HK</option>
+              <option value="US">US</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Company Name *</label>
+          <input type="text" id="watch-name" placeholder="e.g. Alibaba Group" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Current Price</label>
+            <input type="number" id="watch-price" placeholder="0.00" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Target Price</label>
+            <input type="number" id="watch-target" placeholder="0.00" step="0.01" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catalyst / Why Watching</label>
+          <input type="text" id="watch-catalyst" placeholder="e.g. Earnings beat expected, valuation reset" />
+        </div>
+        <div class="form-group">
+          <label>Conviction Level (1–5)</label>
+          <div class="conviction-picker" id="watch-conviction-picker">
+            <button class="cpip" data-val="1">1</button>
+            <button class="cpip" data-val="2">2</button>
+            <button class="cpip" data-val="3">3</button>
+            <button class="cpip" data-val="4">4</button>
+            <button class="cpip" data-val="5">5</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="watch-notes" placeholder="Additional notes…" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('add-watch-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveWatchItem()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/watchlist.js"></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio — Conviction Logs</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/portfolio.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="nav-logo-primary">Conviction Logs</span>
+        <span class="nav-logo-sub">Investment Journal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">Dashboard</a>
+        <a href="portfolio.html" class="nav-link active">Portfolio</a>
+        <a href="journal.html"   class="nav-link">Journal</a>
+        <a href="watchlist.html" class="nav-link">Watchlist</a>
+      </div>
+      <div class="nav-actions">
+        <button class="btn btn-primary btn-sm" onclick="openAddPosition()">+ Add Position</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-wrapper">
+    <div class="container">
+
+      <div class="section animate-up">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">My <span>Portfolio</span></h1>
+            <p class="page-sub">Track your open &amp; closed positions across HK and US markets.</p>
+          </div>
+          <div class="portfolio-filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="open">Open</button>
+            <button class="filter-btn" data-filter="closed">Closed</button>
+            <button class="filter-btn" data-market="HK">HK</button>
+            <button class="filter-btn" data-market="US">US</button>
+          </div>
+        </div>
+
+        <!-- Summary bar -->
+        <div class="portfolio-summary animate-up delay-1">
+          <div class="stat-tile">
+            <div class="stat-label">Total Positions</div>
+            <div class="stat-value" id="port-total">0</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Open</div>
+            <div class="stat-value" id="port-open">0</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Closed</div>
+            <div class="stat-value" id="port-closed">0</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-label">Win Rate</div>
+            <div class="stat-value" id="port-winrate">—</div>
+          </div>
+        </div>
+
+        <!-- Positions table -->
+        <div class="table-wrapper animate-up delay-2" id="portfolio-table-wrapper">
+          <table id="portfolio-table">
+            <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Exchange</th>
+                <th>Entry Date</th>
+                <th>Entry Price</th>
+                <th>Target Price</th>
+                <th>Stop Loss</th>
+                <th>Conviction</th>
+                <th>Status</th>
+                <th>P&amp;L</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="portfolio-tbody">
+              <tr>
+                <td colspan="10">
+                  <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <p class="empty-state-title">No positions yet</p>
+                    <p class="empty-state-text">Add your first trade to start building your track record.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span class="footer-copy">© <span id="footer-year"></span> Conviction Logs</span>
+        <div class="footer-links">
+          <a href="index.html">Dashboard</a>
+          <a href="portfolio.html">Portfolio</a>
+          <a href="journal.html">Journal</a>
+          <a href="watchlist.html">Watchlist</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Add Position Modal -->
+  <div id="add-position-modal" class="modal-overlay" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Add Position</h2>
+        <button class="modal-close" onclick="closeModal('add-position-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ticker Symbol *</label>
+            <input type="text" id="pos-ticker" placeholder="e.g. 0700 or AAPL" />
+          </div>
+          <div class="form-group">
+            <label>Exchange *</label>
+            <select id="pos-exchange">
+              <option value="HK">HK (HKEX)</option>
+              <option value="US">US (NYSE/NASDAQ)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Company Name</label>
+          <input type="text" id="pos-name" placeholder="e.g. Tencent Holdings" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Entry Date *</label>
+            <input type="date" id="pos-entry-date" />
+          </div>
+          <div class="form-group">
+            <label>Entry Price *</label>
+            <input type="number" id="pos-entry-price" placeholder="0.00" step="0.01" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Target Price</label>
+            <input type="number" id="pos-target" placeholder="0.00" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Stop Loss</label>
+            <input type="number" id="pos-stop" placeholder="0.00" step="0.01" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Conviction Level (1–5)</label>
+          <div class="conviction-picker" id="conviction-picker">
+            <button class="cpip" data-val="1">1</button>
+            <button class="cpip" data-val="2">2</button>
+            <button class="cpip" data-val="3">3</button>
+            <button class="cpip" data-val="4">4</button>
+            <button class="cpip" data-val="5">5</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Thesis (one-liner)</label>
+          <input type="text" id="pos-thesis" placeholder="Why are you buying this?" />
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="pos-status">
+            <option value="open">Open</option>
+            <option value="closed">Closed</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('add-position-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="savePosition()">Save Position</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/portfolio.js"></script>
+</body>
+</html>

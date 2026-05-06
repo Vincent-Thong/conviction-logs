@@ -1,34 +1,47 @@
-# conviction-logs
-> **A systematic research journal documenting high-conviction investment theses in the HK/China Tech and Semiconductor sectors.**
+# Conviction Logs — Investment Journal
 
----
+A personal investment journal for tracking equity positions, documenting thesis, and maintaining a watchlist across HK and US markets.
 
-## 🔍 Overview
-`conviction-logs` is a research repository documenting a systematic approach to equity analysis. As a Security Test Engineer, I apply a "validation-first" mindset to the markets—auditing the structural, regulatory, and technical drivers behind my core positions.
+## Pages
 
-This portal serves as a version-controlled ledger of my investment journey, focusing on the HK/China Tech sector and the global semiconductor supply chain.
+| Page | Description |
+|------|-------------|
+| `index.html` | Dashboard — overview stats, recent entries, watchlist snapshot |
+| `portfolio.html` | Portfolio — open/closed positions table with conviction rating |
+| `journal.html` | Journal — write and review investment theses and notes |
+| `watchlist.html` | Watchlist — stocks on radar with price targets and catalysts |
 
-## 🛠 The Framework
-Every "Log" in this repository is built on three analytical pillars:
+## Structure
 
-*   **State-Backed Catalysts:** Identifying alignment with national initiatives such as the **2025 AI+ Initiative** and the "East Data, West Computing" infrastructure grid[cite: 1].
-*   **Fundamental Stress-Testing:** Analyzing cash flows, buyback yields, and valuation compression to determine if a thesis can withstand macro volatility.
-*   **The Energy Advantage:** Evaluating the impact of state-provided **50% electricity subsidies** for data centers using domestic chips, providing a direct margin boost to Cloud/AI operators[cite: 1].
-*   **Technical Edge:** Leveraging professional experience in IoT and Cloud security to evaluate the "Hard-Tech" moats of companies in the **HST.SI** index[cite: 1].
+```
+conviction-logs/
+├── index.html
+├── portfolio.html
+├── journal.html
+├── watchlist.html
+├── assets/
+│   └── favicon.svg
+├── css/
+│   ├── style.css          ← shared theme & design system
+│   ├── dashboard.css
+│   ├── portfolio.css
+│   ├── journal.css
+│   └── watchlist.css
+└── js/
+    ├── store.js           ← localStorage data layer
+    ├── nav.js             ← shared utilities
+    ├── dashboard.js
+    ├── portfolio.js
+    ├── journal.js
+    └── watchlist.js
+```
 
-## 📂 Repository Structure
-*   **/equities**: Deep-dive theses for individual stocks (e.g., Alibaba 9988.HK).
-*   **/indices**: Strategic analysis of sector-wide vehicles like the **Lion-OCBC Hang Seng TECH ETF (HST.SI)**[cite: 1].
-*   **/models**: Documentation of the valuation models and energy-arbitrage trackers used in the research process.
+## Design
 
-## 🚀 Technical Implementation
-This site is designed for high performance and clarity:
-*   **Markdown Driven:** Content is written in `.md` for version control and readability.
-*   **Dynamic Rendering:** Powered by `marked.js` to render research papers on the fly via a single-page template.
-*   **Mathematical Accuracy:** LaTeX formulas (via MathJax) are used for formal valuation models:
+- Dark editorial theme with warm gold accents
+- Fonts: DM Serif Display (headings) · Instrument Sans (body) · DM Mono (data)
+- All data stored in `localStorage` — no backend required
 
----
+## Usage
 
-**Disclaimer:** *I am a Security Test Engineer, not a licensed financial advisor. This repository represents my personal research and conviction logs. I often hold long positions in the securities discussed here.*
-
----
+Open `index.html` in a browser. No build step needed — pure HTML/CSS/JS.
