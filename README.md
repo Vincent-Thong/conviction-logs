@@ -27,17 +27,6 @@ This site is designed for high performance and clarity:
 *   **Dynamic Rendering:** Powered by `marked.js` to render research papers on the fly via a single-page template.
 *   **Mathematical Accuracy:** LaTeX formulas (via MathJax) are used for formal valuation models:
 
-$$V_{HST.SI} = \sum_{t=1}^{5} \frac{E_t \times (1 + g)^t}{(1 + r)^t} + \frac{TerminalValue}{(1 + r)^5}$$
-
----
-
-## 📈 Active Tracking: HST.SI (April 2026)
-| KPI | Target | Current Status | Trend |
-| :--- | :--- | :--- | :--- |
-| **Southbound Capital** | Positive Monthly | HK$38.8B (April) | 📈 |
-| **AI Workload Growth** | $>35\%$ YoY | 36.2% | ✅ |
-| **Energy Subsidies** | Active | 50% OpEx Reduction | ⚡ |
-
 ---
 
 **Disclaimer:** *I am a Security Test Engineer, not a licensed financial advisor. This repository represents my personal research and conviction logs. I often hold long positions in the securities discussed here.*
