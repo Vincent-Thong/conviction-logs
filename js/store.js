@@ -9,58 +9,162 @@ const GithubSync = (() => {
   const DATA_PATH  = 'data/store.json';
   let _sha = null;
 
-  const getConfig    = () => { try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || null; } catch { return null; } };
-  const saveConfig   = (cfg) => localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
-  const isConfigured = () => { const c = getConfig(); return !!(c && c.pat && c.owner && c.repo); };
-  const _apiUrl      = () => { const c = getConfig(); return `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${DATA_PATH}`; };
-  const _headers     = () => { const c = getConfig(); return { 'Authorization': `token ${c.pat}`, 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' }; };
-  const _emptyData   = () => ({ positions: [], entries: [], watchlist: [] });
-  const _fromCache   = () => { try { return JSON.parse(localStorage.getItem(CACHE_KEY)) || _emptyData(); } catch { return _emptyData(); } };
+  function getConfig() {
+    try {
+      const raw = localStorage.getItem(CONFIG_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error('[GithubSync] getConfig parse error:', e);
+      return null;
+    }
+  }
 
-  async function load() {
-    if (!isConfigured()) return null;
+  function saveConfig(cfg) {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+    console.log('[GithubSync] Config saved:', { owner: cfg.owner, repo: cfg.repo, branch: cfg.branch });
+  }
+
+  function isConfigured() {
     const c = getConfig();
-    const url = _apiUrl() + (c.branch ? `?ref=${c.branch}` : '');
+    const ok = !!(c && c.pat && c.owner && c.repo);
+    return ok;
+  }
+
+  function _apiUrl() {
+    const c = getConfig();
+    return `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${DATA_PATH}`;
+  }
+
+  function _headers() {
+    const c = getConfig();
+    return {
+      'Authorization': `token ${c.pat}`,
+      'Accept':        'application/vnd.github+json',
+      'Content-Type':  'application/json',
+    };
+  }
+
+  function _emptyData() {
+    return { positions: [], entries: [], watchlist: [] };
+  }
+
+  function _fromCache() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      return raw ? JSON.parse(raw) : _emptyData();
+    } catch {
+      return _emptyData();
+    }
+  }
+
+  /** Fetch data/store.json from GitHub. Returns parsed data object. */
+  async function load() {
+    if (!isConfigured()) {
+      console.warn('[GithubSync] load() skipped — not configured');
+      return _fromCache();
+    }
+
+    const c   = getConfig();
+    const url = _apiUrl() + `?ref=${c.branch || 'main'}&t=${Date.now()}`; // cache-bust
+    console.log('[GithubSync] Fetching from GitHub:', url.split('?')[0]);
+
     try {
       const res = await fetch(url, { headers: _headers() });
-      if (res.status === 404) { _sha = null; return _emptyData(); }
-      if (!res.ok) throw new Error(`GitHub API ${res.status}`);
-      const json = await res.json();
-      _sha = json.sha;
-      const data = JSON.parse(atob(json.content.replace(/\n/g, '')));
+      console.log('[GithubSync] GitHub response status:', res.status);
+
+      if (res.status === 404) {
+        console.warn('[GithubSync] data/store.json not found in repo — starting empty');
+        _sha = null;
+        return _emptyData();
+      }
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`GitHub API ${res.status}: ${errBody}`);
+      }
+
+      const json    = await res.json();
+      _sha          = json.sha;
+      const content = json.content.replace(/\n/g, '');
+      const data    = JSON.parse(atob(content));
+
+      console.log('[GithubSync] Loaded from GitHub:', {
+        positions: data.positions?.length,
+        entries:   data.entries?.length,
+        watchlist: data.watchlist?.length,
+        sha:       _sha?.slice(0, 8),
+      });
+
+      // Update local cache
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
       return data;
+
     } catch (err) {
-      console.warn('[GithubSync] load failed, using cache:', err.message);
+      console.error('[GithubSync] load failed:', err.message);
+      console.warn('[GithubSync] Falling back to local cache');
       return _fromCache();
     }
   }
 
+  /** Push full data object to GitHub as a commit. */
   async function push(data) {
-    if (!isConfigured()) return;
+    if (!isConfigured()) {
+      console.warn('[GithubSync] push() skipped — not configured. Data only saved locally.');
+      return;
+    }
+
     const c       = getConfig();
     const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-    const body    = { message: `chore: sync store [${new Date().toISOString().slice(0,10)}]`, content, ...(c.branch ? { branch: c.branch } : {}), ...(_sha ? { sha: _sha } : {}) };
+    const body    = {
+      message: `chore: sync store [${new Date().toISOString().slice(0, 10)}]`,
+      content,
+      branch: c.branch || 'main',
+      ...(_sha ? { sha: _sha } : {}),
+    };
+
+    console.log('[GithubSync] Pushing to GitHub… sha:', _sha?.slice(0, 8) || '(new file)');
+
     try {
-      const res = await fetch(_apiUrl(), { method: 'PUT', headers: _headers(), body: JSON.stringify(body) });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || `status ${res.status}`); }
+      const res = await fetch(_apiUrl(), {
+        method:  'PUT',
+        headers: _headers(),
+        body:    JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        throw new Error(e.message || `status ${res.status}`);
+      }
+
       const json = await res.json();
       _sha = json.content.sha;
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+      console.log('[GithubSync] Push successful. New sha:', _sha.slice(0, 8));
+
     } catch (err) {
       console.error('[GithubSync] push failed:', err.message);
       _showSyncError(err.message);
     }
   }
 
+  /** Verify PAT + repo access. Returns { ok, message }. */
   async function testConnection(cfg) {
+    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}`;
     try {
-      const res = await fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}`, { headers: { 'Authorization': `token ${cfg.pat}`, 'Accept': 'application/vnd.github+json' } });
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `token ${cfg.pat}`,
+          'Accept':        'application/vnd.github+json',
+        },
+      });
       if (res.status === 200) return { ok: true,  message: 'Connected successfully!' };
       if (res.status === 401) return { ok: false, message: 'Invalid PAT — check your token.' };
       if (res.status === 404) return { ok: false, message: 'Repo not found — check owner/repo name.' };
       return { ok: false, message: `Unexpected status ${res.status}` };
-    } catch { return { ok: false, message: 'Network error.' }; }
+    } catch {
+      return { ok: false, message: 'Network error — check your connection.' };
+    }
   }
 
   function _showSyncError(msg) {
@@ -78,29 +182,55 @@ const GithubSync = (() => {
   return { load, push, getConfig, saveConfig, isConfigured, testConnection };
 })();
 
+
 /* ── In-memory state ─────────────────────────────────────────── */
 let _state = { positions: [], entries: [], watchlist: [] };
 const _id  = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
+/**
+ * StoreInit — call once on every page load.
+ * Fetches latest data from GitHub → populates _state → calls onReady().
+ */
 async function StoreInit(onReady) {
+  console.log('[Store] StoreInit starting. Configured:', GithubSync.isConfigured());
   _setSyncDot('syncing');
-  if (GithubSync.isConfigured()) {
-    const data = await GithubSync.load();
-    if (data) _state = data;
-  } else {
-    try { const c = localStorage.getItem('cl_data_cache'); if (c) _state = JSON.parse(c); } catch {}
-  }
+
+  const data = await GithubSync.load();   // always call load() — it handles unconfigured case internally
+  _state = data;
+
+  console.log('[Store] _state loaded:', {
+    positions: _state.positions.length,
+    entries:   _state.entries.length,
+    watchlist: _state.watchlist.length,
+  });
+
   _setSyncDot('idle');
-  if (onReady) onReady();
+
+  if (onReady) {
+    console.log('[Store] Calling onReady (render)');
+    onReady();
+  }
 }
 
 function _setSyncDot(state) {
   const dot = document.getElementById('sync-status-dot');
   if (!dot) return;
   const cfg = GithubSync.isConfigured();
-  if      (state === 'syncing') { dot.title = 'Syncing…';             dot.style.background = '#c9a84c'; }
-  else if (state === 'saved')   { dot.title = 'Saved to GitHub ✓';   dot.style.background = '#3ecf8e'; setTimeout(() => _setSyncDot('idle'), 2000); }
-  else                          { dot.title = cfg ? 'Synced' : 'GitHub not configured — visit Settings'; dot.style.background = cfg ? '#4d5a6b' : '#f06080'; }
+  dot.style.cursor = 'pointer';
+  dot.onclick      = () => window.location = 'settings.html';
+
+  if (state === 'syncing') {
+    dot.title            = 'Syncing with GitHub…';
+    dot.style.background = '#c9a84c';
+  } else if (state === 'saved') {
+    dot.title            = 'Saved to GitHub ✓';
+    dot.style.background = '#3ecf8e';
+    setTimeout(() => _setSyncDot('idle'), 2000);
+  } else {
+    // idle
+    dot.title            = cfg ? 'GitHub sync active ✓ — click to manage' : 'GitHub not configured — click to set up';
+    dot.style.background = cfg ? '#3ecf8e' : '#f06080';
+  }
 }
 
 async function _persist() {
@@ -110,17 +240,43 @@ async function _persist() {
   _setSyncDot('saved');
 }
 
-/* ── Public API ──────────────────────────────────────────────── */
+
+/* ── Public Store API ──────────────────────────────────────────── */
 const Store = {
-  getPositions()         { return _state.positions; },
-  async savePosition(p)  { const a = _state.positions; const i = a.findIndex(x=>x.id===p.id); if(i>=0) a[i]=p; else _state.positions.unshift({...p,id:_id(),createdAt:Date.now()}); await _persist(); },
-  async deletePosition(id){ _state.positions=_state.positions.filter(p=>p.id!==id); await _persist(); },
 
-  getEntries()           { return _state.entries; },
-  async saveEntry(e)     { const a = _state.entries; const i = a.findIndex(x=>x.id===e.id); if(i>=0) a[i]=e; else _state.entries.unshift({...e,id:_id(),createdAt:Date.now()}); await _persist(); },
-  async deleteEntry(id)  { _state.entries=_state.entries.filter(e=>e.id!==id); await _persist(); },
+  getPositions()          { return _state.positions || []; },
+  async savePosition(p)   {
+    const a = _state.positions;
+    const i = a.findIndex(x => x.id === p.id);
+    if (i >= 0) a[i] = p; else _state.positions.unshift({ ...p, id: _id(), createdAt: Date.now() });
+    await _persist();
+  },
+  async deletePosition(id) {
+    _state.positions = _state.positions.filter(p => p.id !== id);
+    await _persist();
+  },
 
-  getWatchlist()         { return _state.watchlist; },
-  async saveWatchItem(w) { const a = _state.watchlist; const i = a.findIndex(x=>x.id===w.id); if(i>=0) a[i]=w; else _state.watchlist.unshift({...w,id:_id(),createdAt:Date.now()}); await _persist(); },
-  async deleteWatchItem(id){ _state.watchlist=_state.watchlist.filter(w=>w.id!==id); await _persist(); },
+  getEntries()            { return _state.entries || []; },
+  async saveEntry(e)      {
+    const a = _state.entries;
+    const i = a.findIndex(x => x.id === e.id);
+    if (i >= 0) a[i] = e; else _state.entries.unshift({ ...e, id: _id(), createdAt: Date.now() });
+    await _persist();
+  },
+  async deleteEntry(id)   {
+    _state.entries = _state.entries.filter(e => e.id !== id);
+    await _persist();
+  },
+
+  getWatchlist()           { return _state.watchlist || []; },
+  async saveWatchItem(w)   {
+    const a = _state.watchlist;
+    const i = a.findIndex(x => x.id === w.id);
+    if (i >= 0) a[i] = w; else _state.watchlist.unshift({ ...w, id: _id(), createdAt: Date.now() });
+    await _persist();
+  },
+  async deleteWatchItem(id) {
+    _state.watchlist = _state.watchlist.filter(w => w.id !== id);
+    await _persist();
+  },
 };

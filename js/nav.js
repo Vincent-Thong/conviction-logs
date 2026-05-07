@@ -7,32 +7,6 @@ document.querySelectorAll('#footer-year').forEach(el => {
   el.textContent = new Date().getFullYear();
 });
 
-// Inject sync status dot + settings link into nav-actions
-(function injectSyncDot() {
-  const actions = document.querySelector('.nav-actions');
-  if (!actions) return;
-
-  // Sync dot
-  const dot = document.createElement('span');
-  dot.id    = 'sync-status-dot';
-  dot.title = 'Checking GitHub sync…';
-  dot.style.cssText = [
-    'display:inline-block;width:8px;height:8px',
-    'border-radius:50%;background:#c9a84c',
-    'transition:background .4s ease;cursor:default',
-    'margin-right:4px;flex-shrink:0',
-  ].join(';');
-
-  // Settings link
-  const settingsLink = document.createElement('a');
-  settingsLink.href      = 'settings.html';
-  settingsLink.className = 'btn btn-ghost btn-sm';
-  settingsLink.textContent = '⚙ Settings';
-
-  actions.prepend(settingsLink);
-  actions.prepend(dot);
-})();
-
 // Close modal helper
 function closeModal(id) {
   const el = document.getElementById(id);
@@ -49,25 +23,11 @@ document.addEventListener('click', (e) => {
 // Close modal on Escape
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    document.querySelectorAll('.modal-overlay').forEach(m => {
-      m.style.display = 'none';
-    });
+    document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
   }
 });
 
-// Conviction picker shared init
-function initConvictionPicker(pickerId, getValue, setValue) {
-  const picker = document.getElementById(pickerId);
-  if (!picker) return;
-  picker.querySelectorAll('.cpip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      picker.querySelectorAll('.cpip').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      setValue(parseInt(btn.dataset.val));
-    });
-  });
-}
-
+// Conviction picker helpers
 function setConvictionPicker(pickerId, val) {
   const picker = document.getElementById(pickerId);
   if (!picker) return;
@@ -83,13 +43,13 @@ function getConvictionPicker(pickerId) {
   return sel ? parseInt(sel.dataset.val) : null;
 }
 
-// Helpers
+// Date formatter
 function formatDate(dateStr) {
   if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
 
+// Badge helpers
 function convictionBadge(level) {
   if (!level) return '';
   const pips = Array.from({ length: 5 }, (_, i) =>
@@ -105,12 +65,31 @@ function exchangeBadge(exchange) {
 }
 
 function typeBadgeClass(type) {
-  const map = {
-    thesis: 'badge-gold',
-    review: 'badge-blue',
-    macro:  'badge-neutral',
-    earnings: 'badge-green',
-    note:   'badge-neutral',
-  };
+  const map = { thesis:'badge-gold', review:'badge-blue', macro:'badge-neutral', earnings:'badge-green', note:'badge-neutral' };
   return map[type] || 'badge-neutral';
 }
+
+// ── Sync dot ──────────────────────────────────────────────────
+// Rendered inline in each HTML page as #sync-status-dot.
+// This function updates it based on GitHub config state.
+function updateSyncDot() {
+  const dot = document.getElementById('sync-status-dot');
+  if (!dot) return;
+
+  // GithubSync is defined in store.js which loads before nav.js
+  const configured = typeof GithubSync !== 'undefined' && GithubSync.isConfigured();
+
+  dot.style.cursor = 'pointer';
+  dot.onclick = () => window.location = 'settings.html';
+
+  if (configured) {
+    dot.style.background = '#4d5a6b';
+    dot.title = 'GitHub sync configured ✓ — click to manage';
+  } else {
+    dot.style.background = '#f06080';
+    dot.title = 'GitHub not configured — click to set up';
+  }
+}
+
+// Run after DOM + store.js are ready
+document.addEventListener('DOMContentLoaded', updateSyncDot);
