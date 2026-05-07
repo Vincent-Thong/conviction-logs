@@ -1,5 +1,20 @@
 {
-  "positions": [],
+  "positions": [
+    {
+      "id": "mov1l791t01l",
+      "ticker": "9988",
+      "name": "Alibaba",
+      "exchange": "HK",
+      "entryDate": "2026-05-07",
+      "entryPrice": 104.483,
+      "target": 300,
+      "stop": null,
+      "thesis": "AI infrastructure play - Largest Cloud Provider in China. Growth Stock.",
+      "status": "open",
+      "conviction": 5,
+      "createdAt": 1778131506421
+    }
+  ],
   "entries": [],
   "watchlist": []
 }
