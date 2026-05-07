@@ -1,7 +1,7 @@
 {
   "positions": [
     {
-      "id": "mov6s6edoddb",
+      "id": "mov6s77ny6nz",
       "ticker": "9988",
       "name": "Alibaba Group",
       "exchange": "HK",
@@ -12,7 +12,7 @@
       "thesis": "",
       "status": "open",
       "conviction": 5,
-      "createdAt": 1778140229989
+      "createdAt": 1778140231043
     }
   ],
   "entries": [],
