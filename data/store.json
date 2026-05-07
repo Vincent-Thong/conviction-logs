@@ -1,19 +1,5 @@
 {
-  "positions": [
-    {
-      "id": "mov6s77ny6nz",
-      "ticker": "9988",
-      "name": "Alibaba Group",
-      "exchange": "HK",
-      "entryDate": "",
-      "entryPrice": 104.483,
-      "target": 300,
-      "stop": null,
-      "thesis": "",
-      "status": "open",
-      "conviction": 5
-    }
-  ],
+  "positions": [],
   "entries": [],
   "watchlist": []
 }

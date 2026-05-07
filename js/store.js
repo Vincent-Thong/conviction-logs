@@ -1,187 +1,66 @@
 /**
  * store.js — Conviction Logs data layer
- * GitHub Contents API sync + localStorage cache fallback
+ * Backend: Supabase (Postgres + REST API)
+ * No login or PAT required — works on any device instantly.
  */
 
-const GithubSync = (() => {
-  const CONFIG_KEY = 'cl_github_config';
-  const CACHE_KEY  = 'cl_data_cache';
-  const DATA_PATH  = 'data/store.json';
-  let _sha = null;
+const SUPABASE_URL = 'https://wurfkzoscmhiulizgwax.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1cmZrem9zY21oaXVsaXpnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMjA4OTgsImV4cCI6MjA5MzY5Njg5OH0.e-UJytBdlLFCU9lMoYxAiRXgJZlFWZCqG3Y3n7WpJLs';
 
-  function getConfig() {
-    try {
-      const raw = localStorage.getItem(CONFIG_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch (e) {
-      console.error('[GithubSync] getConfig parse error:', e);
-      return null;
+/* ── Supabase REST helper ─────────────────────────────────────── */
+const db = (() => {
+  const headers = {
+    'apikey':        SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type':  'application/json',
+    'Prefer':        'return=representation',
+  };
+
+  async function request(method, table, body = null, params = '') {
+    const url = `${SUPABASE_URL}/rest/v1/${table}${params}`;
+    const res  = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(`[Supabase] ${method} ${table} failed: ${err.message || res.status}`);
     }
+    // 204 No Content has no body
+    if (res.status === 204) return null;
+    return res.json();
   }
 
-  function saveConfig(cfg) {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
-    console.log('[GithubSync] Config saved:', { owner: cfg.owner, repo: cfg.repo, branch: cfg.branch });
-  }
+  return {
+    /** Fetch all rows, returns array of data objects */
+    async getAll(table) {
+      const rows = await request('GET', table, null, '?select=id,data,created_at&order=created_at.desc');
+      return (rows || []).map(r => ({ id: r.id, createdAt: r.created_at, ...r.data }));
+    },
 
-  function isConfigured() {
-    const c = getConfig();
-    const ok = !!(c && c.pat && c.owner && c.repo);
-    return ok;
-  }
-
-  function _apiUrl() {
-    const c = getConfig();
-    return `https://api.github.com/repos/${c.owner}/${c.repo}/contents/${DATA_PATH}`;
-  }
-
-  function _headers() {
-    const c = getConfig();
-    return {
-      'Authorization': `token ${c.pat}`,
-      'Accept':        'application/vnd.github+json',
-      'Content-Type':  'application/json',
-    };
-  }
-
-  function _emptyData() {
-    return { positions: [], entries: [], watchlist: [] };
-  }
-
-  function _fromCache() {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      return raw ? JSON.parse(raw) : _emptyData();
-    } catch {
-      return _emptyData();
-    }
-  }
-
-  /** Fetch data/store.json from GitHub. Returns parsed data object. */
-  async function load() {
-    if (!isConfigured()) {
-      console.warn('[GithubSync] load() skipped — not configured');
-      return _fromCache();
-    }
-
-    const c   = getConfig();
-    const url = _apiUrl() + `?ref=${c.branch || 'main'}&t=${Date.now()}`; // cache-bust
-    console.log('[GithubSync] Fetching from GitHub:', url.split('?')[0]);
-
-    try {
-      const res = await fetch(url, { headers: _headers() });
-      console.log('[GithubSync] GitHub response status:', res.status);
-
-      if (res.status === 404) {
-        console.warn('[GithubSync] data/store.json not found in repo — starting empty');
-        _sha = null;
-        return _emptyData();
-      }
-
-      if (!res.ok) {
-        const errBody = await res.text();
-        throw new Error(`GitHub API ${res.status}: ${errBody}`);
-      }
-
-      const json    = await res.json();
-      _sha          = json.sha;
-      const content = json.content.replace(/\n/g, '');
-      const data    = JSON.parse(atob(content));
-
-      console.log('[GithubSync] Loaded from GitHub:', {
-        positions: data.positions?.length,
-        entries:   data.entries?.length,
-        watchlist: data.watchlist?.length,
-        sha:       _sha?.slice(0, 8),
-      });
-
-      // Update local cache
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-      return data;
-
-    } catch (err) {
-      console.error('[GithubSync] load failed:', err.message);
-      console.warn('[GithubSync] Falling back to local cache');
-      return _fromCache();
-    }
-  }
-
-  /** Push full data object to GitHub as a commit. */
-  async function push(data) {
-    if (!isConfigured()) {
-      console.warn('[GithubSync] push() skipped — not configured. Data only saved locally.');
-      return;
-    }
-
-    const c       = getConfig();
-    const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-    const body    = {
-      message: `chore: sync store [${new Date().toISOString().slice(0, 10)}]`,
-      content,
-      branch: c.branch || 'main',
-      ...(_sha ? { sha: _sha } : {}),
-    };
-
-    console.log('[GithubSync] Pushing to GitHub… sha:', _sha?.slice(0, 8) || '(new file)');
-
-    try {
-      const res = await fetch(_apiUrl(), {
-        method:  'PUT',
-        headers: _headers(),
-        body:    JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({}));
-        throw new Error(e.message || `status ${res.status}`);
-      }
-
-      const json = await res.json();
-      _sha = json.content.sha;
-      localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-      console.log('[GithubSync] Push successful. New sha:', _sha.slice(0, 8));
-
-    } catch (err) {
-      console.error('[GithubSync] push failed:', err.message);
-      _showSyncError(err.message);
-    }
-  }
-
-  /** Verify PAT + repo access. Returns { ok, message }. */
-  async function testConnection(cfg) {
-    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}`;
-    try {
+    /** Upsert a single row (insert or update by id) */
+    async upsert(table, id, data) {
+      // Strip id and createdAt from data payload — they live as top-level columns
+      const { id: _id, createdAt: _ca, ...payload } = data;
+      await request('POST', table, { id, data: payload }, '');
+      // On conflict (existing id) update instead
+      // Supabase upsert via Prefer: resolution=merge-duplicates
+      const upsertHeaders = { ...headers, 'Prefer': 'resolution=merge-duplicates,return=representation' };
+      const url = `${SUPABASE_URL}/rest/v1/${table}`;
       const res = await fetch(url, {
-        headers: {
-          'Authorization': `token ${cfg.pat}`,
-          'Accept':        'application/vnd.github+json',
-        },
+        method:  'POST',
+        headers: upsertHeaders,
+        body:    JSON.stringify({ id, data: payload }),
       });
-      if (res.status === 200) return { ok: true,  message: 'Connected successfully!' };
-      if (res.status === 401) return { ok: false, message: 'Invalid PAT — check your token.' };
-      if (res.status === 404) return { ok: false, message: 'Repo not found — check owner/repo name.' };
-      return { ok: false, message: `Unexpected status ${res.status}` };
-    } catch {
-      return { ok: false, message: 'Network error — check your connection.' };
-    }
-  }
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`[Supabase] upsert ${table} failed: ${err.message || res.status}`);
+      }
+    },
 
-  function _showSyncError(msg) {
-    let b = document.getElementById('sync-error-banner');
-    if (!b) {
-      b = document.createElement('div');
-      b.id = 'sync-error-banner';
-      b.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;background:#1e1010;border:1px solid #f06080;color:#f06080;border-radius:8px;padding:12px 18px;font-size:.8125rem;font-family:monospace;max-width:360px;line-height:1.5;box-shadow:0 4px 24px rgba(0,0,0,.5)';
-      document.body.appendChild(b);
-    }
-    b.innerHTML = `⚠ Sync failed: ${msg}<br><span style="color:#8a9ab0;font-size:.75rem">Data cached locally. Check Settings.</span><button onclick="this.parentElement.remove()" style="float:right;background:none;border:none;color:inherit;cursor:pointer;font-size:1rem">✕</button>`;
-    setTimeout(() => b?.remove(), 10000);
-  }
-
-  return { load, push, getConfig, saveConfig, isConfigured, testConnection };
+    /** Delete a row by id */
+    async remove(table, id) {
+      await request('DELETE', table, null, `?id=eq.${encodeURIComponent(id)}`);
+    },
+  };
 })();
-
 
 /* ── In-memory state ─────────────────────────────────────────── */
 let _state = { positions: [], entries: [], watchlist: [] };
@@ -189,94 +68,135 @@ const _id  = () => Date.now().toString(36) + Math.random().toString(36).slice(2,
 
 /**
  * StoreInit — call once on every page load.
- * Fetches latest data from GitHub → populates _state → calls onReady().
+ * Fetches all data from Supabase → populates _state → calls onReady().
  */
 async function StoreInit(onReady) {
-  console.log('[Store] StoreInit starting. Configured:', GithubSync.isConfigured());
+  console.log('[Store] StoreInit — fetching from Supabase…');
   _setSyncDot('syncing');
 
-  const data = await GithubSync.load();   // always call load() — it handles unconfigured case internally
-  _state = data;
+  try {
+    const [positions, entries, watchlist] = await Promise.all([
+      db.getAll('positions'),
+      db.getAll('entries'),
+      db.getAll('watchlist'),
+    ]);
 
-  console.log('[Store] _state loaded:', {
-    positions: _state.positions.length,
-    entries:   _state.entries.length,
-    watchlist: _state.watchlist.length,
-  });
+    _state = { positions, entries, watchlist };
 
-  _setSyncDot('idle');
+    console.log('[Store] Loaded:', {
+      positions: positions.length,
+      entries:   entries.length,
+      watchlist: watchlist.length,
+    });
 
-  if (onReady) {
-    console.log('[Store] Calling onReady (render)');
-    onReady();
+    _setSyncDot('idle');
+  } catch (err) {
+    console.error('[Store] StoreInit failed:', err.message);
+    _setSyncDot('error');
+    _showError('Could not load data from Supabase. Check your connection.');
   }
+
+  if (onReady) onReady();
 }
 
+/* ── Sync dot UI ─────────────────────────────────────────────── */
 function _setSyncDot(state) {
   const dot = document.getElementById('sync-status-dot');
   if (!dot) return;
-  const cfg = GithubSync.isConfigured();
-  dot.style.cursor = 'pointer';
-  dot.onclick      = () => window.location = 'settings.html';
+  dot.style.cursor = 'default';
+  if      (state === 'syncing') { dot.style.background = '#c9a84c'; dot.title = 'Syncing…'; }
+  else if (state === 'saved')   { dot.style.background = '#3ecf8e'; dot.title = 'Saved ✓'; setTimeout(() => _setSyncDot('idle'), 2000); }
+  else if (state === 'error')   { dot.style.background = '#f06080'; dot.title = 'Sync error — check console'; }
+  else                          { dot.style.background = '#3ecf8e'; dot.title = 'Connected to Supabase ✓'; }
+}
 
-  if (state === 'syncing') {
-    dot.title            = 'Syncing with GitHub…';
-    dot.style.background = '#c9a84c';
-  } else if (state === 'saved') {
-    dot.title            = 'Saved to GitHub ✓';
-    dot.style.background = '#3ecf8e';
-    setTimeout(() => _setSyncDot('idle'), 2000);
-  } else {
-    // idle
-    dot.title            = cfg ? 'GitHub sync active ✓ — click to manage' : 'GitHub not configured — click to set up';
-    dot.style.background = cfg ? '#3ecf8e' : '#f06080';
+function _showError(msg) {
+  let b = document.getElementById('sync-error-banner');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'sync-error-banner';
+    b.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;background:#1e1010;border:1px solid #f06080;color:#f06080;border-radius:8px;padding:12px 18px;font-size:.8125rem;font-family:monospace;max-width:360px;line-height:1.5;box-shadow:0 4px 24px rgba(0,0,0,.5)';
+    document.body.appendChild(b);
   }
+  b.innerHTML = `⚠ ${msg} <button onclick="this.parentElement.remove()" style="float:right;background:none;border:none;color:inherit;cursor:pointer;font-size:1rem">✕</button>`;
+  setTimeout(() => b?.remove(), 10000);
 }
 
-async function _persist() {
-  localStorage.setItem('cl_data_cache', JSON.stringify(_state));
-  _setSyncDot('syncing');
-  await GithubSync.push(_state);
-  _setSyncDot('saved');
-}
-
-
-/* ── Public Store API ──────────────────────────────────────────── */
+/* ── Public Store API ────────────────────────────────────────── */
 const Store = {
 
-  getPositions()          { return _state.positions || []; },
-  async savePosition(p)   {
-    const a = _state.positions;
-    const i = a.findIndex(x => x.id === p.id);
-    if (i >= 0) a[i] = p; else _state.positions.unshift({ ...p, id: _id(), createdAt: Date.now() });
-    await _persist();
+  // ── Positions ──────────────────────────────────────────────
+  getPositions() { return _state.positions; },
+
+  async savePosition(pos) {
+    _setSyncDot('syncing');
+    const id   = pos.id || _id();
+    const item = { ...pos, id };
+    try {
+      await db.upsert('positions', id, item);
+      const idx = _state.positions.findIndex(p => p.id === id);
+      if (idx >= 0) _state.positions[idx] = item;
+      else _state.positions.unshift(item);
+      _setSyncDot('saved');
+    } catch (err) { console.error(err); _setSyncDot('error'); _showError(err.message); }
   },
+
   async deletePosition(id) {
-    _state.positions = _state.positions.filter(p => p.id !== id);
-    await _persist();
+    _setSyncDot('syncing');
+    try {
+      await db.remove('positions', id);
+      _state.positions = _state.positions.filter(p => p.id !== id);
+      _setSyncDot('saved');
+    } catch (err) { console.error(err); _setSyncDot('error'); _showError(err.message); }
   },
 
-  getEntries()            { return _state.entries || []; },
-  async saveEntry(e)      {
-    const a = _state.entries;
-    const i = a.findIndex(x => x.id === e.id);
-    if (i >= 0) a[i] = e; else _state.entries.unshift({ ...e, id: _id(), createdAt: Date.now() });
-    await _persist();
-  },
-  async deleteEntry(id)   {
-    _state.entries = _state.entries.filter(e => e.id !== id);
-    await _persist();
+  // ── Journal entries ────────────────────────────────────────
+  getEntries() { return _state.entries; },
+
+  async saveEntry(entry) {
+    _setSyncDot('syncing');
+    const id   = entry.id || _id();
+    const item = { ...entry, id };
+    try {
+      await db.upsert('entries', id, item);
+      const idx = _state.entries.findIndex(e => e.id === id);
+      if (idx >= 0) _state.entries[idx] = item;
+      else _state.entries.unshift(item);
+      _setSyncDot('saved');
+    } catch (err) { console.error(err); _setSyncDot('error'); _showError(err.message); }
   },
 
-  getWatchlist()           { return _state.watchlist || []; },
-  async saveWatchItem(w)   {
-    const a = _state.watchlist;
-    const i = a.findIndex(x => x.id === w.id);
-    if (i >= 0) a[i] = w; else _state.watchlist.unshift({ ...w, id: _id(), createdAt: Date.now() });
-    await _persist();
+  async deleteEntry(id) {
+    _setSyncDot('syncing');
+    try {
+      await db.remove('entries', id);
+      _state.entries = _state.entries.filter(e => e.id !== id);
+      _setSyncDot('saved');
+    } catch (err) { console.error(err); _setSyncDot('error'); _showError(err.message); }
   },
+
+  // ── Watchlist ──────────────────────────────────────────────
+  getWatchlist() { return _state.watchlist; },
+
+  async saveWatchItem(item) {
+    _setSyncDot('syncing');
+    const id   = item.id || _id();
+    const w    = { ...item, id };
+    try {
+      await db.upsert('watchlist', id, w);
+      const idx = _state.watchlist.findIndex(x => x.id === id);
+      if (idx >= 0) _state.watchlist[idx] = w;
+      else _state.watchlist.unshift(w);
+      _setSyncDot('saved');
+    } catch (err) { console.error(err); _setSyncDot('error'); _showError(err.message); }
+  },
+
   async deleteWatchItem(id) {
-    _state.watchlist = _state.watchlist.filter(w => w.id !== id);
-    await _persist();
+    _setSyncDot('syncing');
+    try {
+      await db.remove('watchlist', id);
+      _state.watchlist = _state.watchlist.filter(w => w.id !== id);
+      _setSyncDot('saved');
+    } catch (err) { console.error(err); _setSyncDot('error'); _showError(err.message); }
   },
 };
