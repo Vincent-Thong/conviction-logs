@@ -45,3 +45,25 @@ conviction-logs/
 ## Usage
 
 Open `index.html` in a browser. No build step needed — pure HTML/CSS/JS.
+
+
+## PAT setup
+
+Setup (one-time, ~2 minutes)
+1. Push all files to your repo including data/store.json
+2. Create a GitHub Personal Access Token:
+
+Go to GitHub → Settings → Developer Settings → Personal Access Tokens → Tokens (classic)
+Or use this direct link: https://github.com/settings/tokens/new
+Give it repo scope
+Copy the token
+
+3. Open settings.html on your site and fill in:
+
+Your PAT
+Owner: Vincent-Thong
+Repo: conviction-logs
+Branch: main
+
+4. Click "Save & Connect" — it tests the connection, saves config to your browser, and syncs
+5. Repeat step 3–4 on LaptopB — same config, and it will immediately load all your data from GitHub
