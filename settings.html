@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — Conviction Logs</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .page-sub { font-size:.875rem; color:var(--text-muted); margin-top:6px; }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 8px;
+    }
+
+    .settings-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+
+    .settings-card-title {
+      font-family: var(--font-display);
+      font-size: 1.0625rem;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .settings-card-desc {
+      font-size: .8125rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .settings-card-desc a {
+      color: var(--gold);
+      text-decoration: underline;
+    }
+
+    .status-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+      font-size: .8125rem;
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-box.success { border-color: rgba(62,207,142,.3); background: var(--green-dim); color: var(--green); }
+    .status-box.error   { border-color: rgba(240,96,128,.3); background: var(--red-dim);   color: var(--red); }
+    .status-box.info    { border-color: var(--border); color: var(--text-secondary); }
+
+    .how-it-works {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      margin-top: 24px;
+    }
+
+    .how-it-works h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+    }
+
+    .step {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 16px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      font-family: var(--font-mono);
+      font-size: .6875rem;
+      color: var(--gold);
+      background: var(--gold-glow);
+      border: 1px solid rgba(201,168,76,.25);
+      border-radius: 50%;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-weight: 500;
+    }
+
+    .step-text {
+      font-size: .875rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .step-text code {
+      font-family: var(--font-mono);
+      font-size: .8rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 3px;
+      color: var(--gold);
+    }
+
+    .current-config {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-family: var(--font-mono);
+      font-size: .75rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .config-row { display: flex; gap: 8px; }
+    .config-key { color: var(--text-muted); min-width: 80px; }
+    .config-val { color: var(--text-primary); }
+
+    @media (max-width: 768px) {
+      .settings-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="nav-logo-primary">Conviction Logs</span>
+        <span class="nav-logo-sub">Investment Journal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">Dashboard</a>
+        <a href="portfolio.html" class="nav-link">Portfolio</a>
+        <a href="journal.html"   class="nav-link">Journal</a>
+        <a href="watchlist.html" class="nav-link">Watchlist</a>
+        <a href="settings.html"  class="nav-link active">Settings</a>
+      </div>
+      <div class="nav-actions">
+        <span id="sync-status-dot" title="GitHub sync status"
+          style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#f06080;margin-right:4px;cursor:default;flex-shrink:0"></span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-wrapper">
+    <div class="container">
+
+      <div class="section animate-up">
+        <div class="section-header">
+          <div>
+            <h1 class="section-title">GitHub <span>Sync</span></h1>
+            <p class="page-sub">Connect to your GitHub repo so data persists across all devices and browsers.</p>
+          </div>
+        </div>
+
+        <div class="settings-grid">
+
+          <!-- Config form -->
+          <div class="settings-card animate-up delay-1">
+            <h2 class="settings-card-title">Configuration</h2>
+            <p class="settings-card-desc">
+              Your data is stored as <code style="font-family:var(--font-mono);font-size:.8rem;color:var(--gold)">data/store.json</code> in your repo.
+              You need a GitHub Personal Access Token with <strong style="color:var(--text-primary)">repo</strong> scope.
+              <br><br>
+              <a href="https://github.com/settings/tokens/new?description=ConvictionLogs&scopes=repo" target="_blank" rel="noopener">
+                → Create a token on GitHub ↗
+              </a>
+            </p>
+
+            <!-- Show current config if set -->
+            <div id="current-config" style="display:none" class="current-config"></div>
+
+            <div class="form-group">
+              <label>GitHub Personal Access Token (PAT) *</label>
+              <input type="password" id="cfg-pat" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label>GitHub Username (owner) *</label>
+              <input type="text" id="cfg-owner" placeholder="e.g. Vincent-Thong" />
+            </div>
+            <div class="form-group">
+              <label>Repository Name *</label>
+              <input type="text" id="cfg-repo" placeholder="e.g. conviction-logs" />
+            </div>
+            <div class="form-group">
+              <label>Branch (optional, default: main)</label>
+              <input type="text" id="cfg-branch" placeholder="main" />
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:4px;">
+              <button class="btn btn-ghost" onclick="testConnection()">Test Connection</button>
+              <button class="btn btn-primary" onclick="saveConfig()">Save & Connect</button>
+            </div>
+
+            <div id="status-box" style="display:none" class="status-box info">
+              <span class="status-dot" id="status-dot" style="background:var(--text-muted)"></span>
+              <span id="status-text"></span>
+            </div>
+          </div>
+
+          <!-- How it works -->
+          <div class="animate-up delay-2">
+            <div class="settings-card" style="margin-bottom:16px">
+              <h2 class="settings-card-title">Sync Status</h2>
+              <p class="settings-card-desc">Current connection state and last sync.</p>
+              <div id="sync-detail" class="current-config">Loading…</div>
+              <button class="btn btn-ghost btn-sm" onclick="forceSync()" style="margin-top:4px">↺ Force Sync Now</button>
+            </div>
+
+            <div class="how-it-works">
+              <h3>How it works</h3>
+              <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-text">On page load, the app fetches <code>data/store.json</code> from your GitHub repo via the Contents API.</div>
+              </div>
+              <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-text">Every time you add, edit, or delete — the change is committed back to the repo automatically.</div>
+              </div>
+              <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-text">Any device that loads the site will fetch the same <code>data/store.json</code> — fully in sync.</div>
+              </div>
+              <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-text">If offline, the app falls back to a local cache and will sync the next time you're online.</div>
+              </div>
+              <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-text">Your PAT is stored only in your browser's <code>localStorage</code> — it is never sent anywhere except directly to the GitHub API.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Danger zone -->
+        <div class="settings-card animate-up delay-3" style="margin-top:24px;border-color:rgba(240,96,128,.2)">
+          <h2 class="settings-card-title" style="color:var(--red)">Danger Zone</h2>
+          <p class="settings-card-desc">These actions are irreversible.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" style="border-color:rgba(240,96,128,.3);color:var(--red)" onclick="clearConfig()">Remove GitHub Config</button>
+            <button class="btn btn-ghost btn-sm" style="border-color:rgba(240,96,128,.3);color:var(--red)" onclick="clearLocalCache()">Clear Local Cache</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span class="footer-copy">© <span id="footer-year"></span> Conviction Logs</span>
+        <div class="footer-links">
+          <a href="index.html">Dashboard</a>
+          <a href="portfolio.html">Portfolio</a>
+          <a href="journal.html">Journal</a>
+          <a href="watchlist.html">Watchlist</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="js/store.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+    function loadCurrentConfig() {
+      const cfg = GithubSync.getConfig();
+      const detail = document.getElementById('sync-detail');
+      const ccDiv  = document.getElementById('current-config');
+
+      if (cfg && cfg.owner) {
+        // Pre-fill form
+        document.getElementById('cfg-owner').value  = cfg.owner  || '';
+        document.getElementById('cfg-repo').value   = cfg.repo   || '';
+        document.getElementById('cfg-branch').value = cfg.branch || '';
+        // Show masked PAT
+        ccDiv.style.display = 'block';
+        ccDiv.innerHTML = `
+          <div class="config-row"><span class="config-key">Owner</span><span class="config-val">${cfg.owner}</span></div>
+          <div class="config-row"><span class="config-key">Repo</span><span class="config-val">${cfg.repo}</span></div>
+          <div class="config-row"><span class="config-key">Branch</span><span class="config-val">${cfg.branch||'main'}</span></div>
+          <div class="config-row"><span class="config-key">PAT</span><span class="config-val">${cfg.pat ? cfg.pat.slice(0,6)+'…'+cfg.pat.slice(-4) : '—'}</span></div>`;
+        detail.innerHTML = `
+          <div class="config-row"><span class="config-key">Status</span><span class="config-val" style="color:var(--green)">✓ Configured</span></div>
+          <div class="config-row"><span class="config-key">Repo</span><span class="config-val">${cfg.owner}/${cfg.repo}</span></div>
+          <div class="config-row"><span class="config-key">Data file</span><span class="config-val">data/store.json</span></div>`;
+        // Update dot
+        const dot = document.getElementById('sync-status-dot');
+        if (dot) { dot.style.background = '#4d5a6b'; dot.title = 'Synced with GitHub'; }
+      } else {
+        ccDiv.style.display = 'none';
+        detail.innerHTML = `<div class="config-row"><span class="config-key">Status</span><span class="config-val" style="color:var(--red)">✗ Not configured</span></div>`;
+      }
+    }
+
+    async function testConnection() {
+      const cfg = _readForm();
+      if (!cfg) return;
+      showStatus('info', 'Testing connection…', '#c9a84c');
+      const result = await GithubSync.testConnection(cfg);
+      showStatus(result.ok ? 'success' : 'error', result.message, result.ok ? 'var(--green)' : 'var(--red)');
+    }
+
+    async function saveConfig() {
+      const cfg = _readForm();
+      if (!cfg) return;
+      showStatus('info', 'Saving and verifying…', '#c9a84c');
+      const result = await GithubSync.testConnection(cfg);
+      if (!result.ok) { showStatus('error', result.message, 'var(--red)'); return; }
+      GithubSync.saveConfig(cfg);
+      showStatus('success', 'Config saved! Syncing data…', 'var(--green)');
+      loadCurrentConfig();
+      // Trigger a sync
+      await StoreInit(() => {});
+      showStatus('success', 'Connected and synced ✓', 'var(--green)');
+    }
+
+    function _readForm() {
+      const pat    = document.getElementById('cfg-pat').value.trim();
+      const owner  = document.getElementById('cfg-owner').value.trim();
+      const repo   = document.getElementById('cfg-repo').value.trim();
+      const branch = document.getElementById('cfg-branch').value.trim() || 'main';
+      if (!owner || !repo) { showStatus('error', 'Owner and repo are required.', 'var(--red)'); return null; }
+      // Use existing PAT if field is empty (masked)
+      const existingCfg = GithubSync.getConfig();
+      const finalPat = pat || (existingCfg && existingCfg.pat) || '';
+      if (!finalPat) { showStatus('error', 'Personal Access Token is required.', 'var(--red)'); return null; }
+      return { pat: finalPat, owner, repo, branch };
+    }
+
+    function showStatus(type, text, dotColor) {
+      const box  = document.getElementById('status-box');
+      const dot  = document.getElementById('status-dot');
+      const span = document.getElementById('status-text');
+      box.style.display = 'flex';
+      box.className = `status-box ${type}`;
+      dot.style.background = dotColor;
+      span.textContent = text;
+    }
+
+    function clearConfig() {
+      if (!confirm('Remove GitHub configuration from this browser? Your data in GitHub will not be deleted.')) return;
+      localStorage.removeItem('cl_github_config');
+      loadCurrentConfig();
+      showStatus('info', 'GitHub config removed from this browser.', 'var(--text-muted)');
+    }
+
+    function clearLocalCache() {
+      if (!confirm('Clear local cache? This only clears offline cache on this browser. GitHub data is safe.')) return;
+      localStorage.removeItem('cl_data_cache');
+      showStatus('info', 'Local cache cleared.', 'var(--text-muted)');
+    }
+
+    async function forceSync() {
+      const detail = document.getElementById('sync-detail');
+      detail.innerHTML += '<div class="config-row"><span class="config-key">Sync</span><span class="config-val" style="color:var(--gold)">Syncing…</span></div>';
+      await StoreInit(() => {});
+      loadCurrentConfig();
+    }
+
+    // Init
+    loadCurrentConfig();
+  </script>
+</body>
+</html>

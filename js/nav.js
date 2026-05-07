@@ -7,6 +7,32 @@ document.querySelectorAll('#footer-year').forEach(el => {
   el.textContent = new Date().getFullYear();
 });
 
+// Inject sync status dot + settings link into nav-actions
+(function injectSyncDot() {
+  const actions = document.querySelector('.nav-actions');
+  if (!actions) return;
+
+  // Sync dot
+  const dot = document.createElement('span');
+  dot.id    = 'sync-status-dot';
+  dot.title = 'Checking GitHub sync…';
+  dot.style.cssText = [
+    'display:inline-block;width:8px;height:8px',
+    'border-radius:50%;background:#c9a84c',
+    'transition:background .4s ease;cursor:default',
+    'margin-right:4px;flex-shrink:0',
+  ].join(';');
+
+  // Settings link
+  const settingsLink = document.createElement('a');
+  settingsLink.href      = 'settings.html';
+  settingsLink.className = 'btn btn-ghost btn-sm';
+  settingsLink.textContent = '⚙ Settings';
+
+  actions.prepend(settingsLink);
+  actions.prepend(dot);
+})();
+
 // Close modal helper
 function closeModal(id) {
   const el = document.getElementById(id);
