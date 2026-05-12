@@ -1,15 +1,18 @@
 /* watchlist.js */
-let editingWatchId=null, filterMarket='all', searchTerm='';
+var editingWatchId=null, filterMarket='all', searchTerm='';
+var watchVisToggle = null;
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function openAddWatch(id){
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){window.location.href='login.html';return;}
   editingWatchId=id||null;
-  ['watch-ticker','watch-name','watch-price','watch-target','watch-catalyst','watch-notes'].forEach(fid=>{const el=document.getElementById(fid);if(el)el.value='';});
+  ['watch-ticker','watch-name','watch-price','watch-target','watch-catalyst','watch-notes'].forEach(function(fid){var el=document.getElementById(fid);if(el)el.value='';});
   document.getElementById('watch-exchange').value='HK';
-  document.querySelectorAll('#watch-conviction-picker .cpip').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#watch-conviction-picker .cpip').forEach(function(b){b.classList.remove('selected');});
   document.getElementById('watch-modal-title').textContent=id?'Edit Watchlist Item':'Add to Watchlist';
+  var initPublic = false;
   if(id){
-    const w=Store.getWatchlist().find(x=>x.id===id);
+    var w=Store.getWatchlist().find(function(x){return x.id===id;});
     if(w){
       document.getElementById('watch-ticker').value=w.ticker||'';
       document.getElementById('watch-name').value=w.name||'';
@@ -19,17 +22,19 @@ function openAddWatch(id){
       document.getElementById('watch-catalyst').value=w.catalyst||'';
       document.getElementById('watch-notes').value=w.notes||'';
       setConvictionPicker('watch-conviction-picker',w.conviction);
+      initPublic = w.isPublic || false;
     }
   }
+  watchVisToggle = makeVisibilityToggle('watch-visibility', initPublic);
   document.getElementById('add-watch-modal').style.display='flex';
 }
 
 async function saveWatchItem(){
-  const ticker=document.getElementById('watch-ticker').value.trim().toUpperCase();
-  const name=document.getElementById('watch-name').value.trim();
+  var ticker=document.getElementById('watch-ticker').value.trim().toUpperCase();
+  var name=document.getElementById('watch-name').value.trim();
   if(!ticker){alert('Ticker is required.');return;}
   if(!name){alert('Company name is required.');return;}
-  const item={id:editingWatchId,ticker,name,exchange:document.getElementById('watch-exchange').value,price:parseFloat(document.getElementById('watch-price').value)||null,target:parseFloat(document.getElementById('watch-target').value)||null,catalyst:document.getElementById('watch-catalyst').value.trim(),notes:document.getElementById('watch-notes').value.trim(),conviction:getConvictionPicker('watch-conviction-picker')};
+  var item={id:editingWatchId,ticker:ticker,name:name,exchange:document.getElementById('watch-exchange').value,price:parseFloat(document.getElementById('watch-price').value)||null,target:parseFloat(document.getElementById('watch-target').value)||null,catalyst:document.getElementById('watch-catalyst').value.trim(),notes:document.getElementById('watch-notes').value.trim(),conviction:getConvictionPicker('watch-conviction-picker'),isPublic:watchVisToggle?watchVisToggle.getValue():false};
   await Store.saveWatchItem(item);
   closeModal('add-watch-modal');
   render();
@@ -42,35 +47,54 @@ async function deleteWatch(id){
 }
 
 function render(){
-  let items=Store.getWatchlist();
-  if(filterMarket!=='all') items=items.filter(w=>w.exchange===filterMarket);
-  if(searchTerm){const q=searchTerm.toLowerCase();items=items.filter(w=>(w.ticker||'').toLowerCase().includes(q)||(w.name||'').toLowerCase().includes(q));}
-  const grid=document.getElementById('watchlist-grid');
-  if(!items.length){grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">◎</div><p class="empty-state-title">${searchTerm?'No matching stocks':'Watchlist is empty'}</p><br/><button class="btn btn-primary" onclick="openAddWatch()">Add First Stock</button></div>`;return;}
-  grid.innerHTML=items.map(w=>{
-    const upside=w.price&&w.target?(((w.target-w.price)/w.price)*100).toFixed(1):null;
-    const uc=upside!==null?(parseFloat(upside)>=0?'var(--green)':'var(--red)'):'';
-    return `<div class="watch-card">
-      <div class="watch-card-top"><div class="watch-card-ticker-block"><span class="watch-card-ticker">${escHtml(w.ticker)}</span><span class="watch-card-name">${escHtml(w.name)}</span></div>${exchangeBadge(w.exchange)}</div>
-      <div class="watch-card-prices">
-        <div class="watch-price-item"><span class="watch-price-label">Current</span><span class="watch-price-value">${w.price??'—'}</span></div>
-        <div class="watch-price-item" style="text-align:right"><span class="watch-price-label">Target</span><span class="watch-price-value" style="color:var(--gold)">${w.target??'—'}</span></div>
-      </div>
-      ${upside!==null?`<span style="font-family:var(--font-mono);font-size:.75rem;color:${uc};margin-bottom:10px;display:block">${parseFloat(upside)>=0?'+':''}${upside}% upside</span>`:''}
-      ${w.catalyst?`<div class="watch-card-catalyst">💡 ${escHtml(w.catalyst)}</div>`:''}
-      <div class="watch-card-footer">
-        ${w.conviction?convictionBadge(w.conviction):'<span></span>'}
-        <div class="watch-card-actions">
-          <button class="row-action-btn" onclick="openAddWatch('${w.id}')">Edit</button>
-          <button class="row-action-btn danger" onclick="deleteWatch('${w.id}')">✕</button>
-        </div>
-      </div>
-    </div>`;
+  var loggedIn = typeof Auth!=='undefined'&&Auth.isLoggedIn();
+  var all = Store.getWatchlist();
+  var items = loggedIn ? all : all.filter(function(w){return w.isPublic;});
+  if(filterMarket!=='all') items=items.filter(function(w){return w.exchange===filterMarket;});
+  if(searchTerm){var q=searchTerm.toLowerCase();items=items.filter(function(w){return (w.ticker||'').toLowerCase().includes(q)||(w.name||'').toLowerCase().includes(q);});}
+  var grid=document.getElementById('watchlist-grid');
+  if(!items.length){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">◎</div><p class="empty-state-title">'+(searchTerm?'No matching stocks':loggedIn?'Watchlist is empty':'No public watchlist items yet')+'</p><br/>'+(loggedIn?'<button class="btn btn-primary" onclick="openAddWatch()">Add First Stock</button>':'<a href="login.html" class="btn btn-primary">Sign In to Add</a>')+'</div>';
+    return;
+  }
+  grid.innerHTML=items.map(function(w){
+    var upside=w.price&&w.target?(((w.target-w.price)/w.price)*100).toFixed(1):null;
+    var uc=upside!==null?(parseFloat(upside)>=0?'var(--green)':'var(--red)'):'';
+    var isOwn=typeof Auth!=='undefined'&&Auth.isLoggedIn()&&Store.isOwner(w);
+    return '<div class="watch-card">'+
+      '<div class="watch-card-top">'+
+      '<div class="watch-card-ticker-block">'+
+      '<span class="watch-card-ticker">'+escHtml(w.ticker)+'</span>'+
+      '<span class="watch-card-name">'+escHtml(w.name)+'</span>'+
+      '</div>'+
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'+
+      exchangeBadge(w.exchange)+
+      (isOwn?'<span class="mine-indicator">Mine</span>':authorBadge(w))+
+      '</div>'+
+      '</div>'+
+      '<div class="watch-card-prices">'+
+      '<div class="watch-price-item"><span class="watch-price-label">Current</span><span class="watch-price-value">'+(w.price??'—')+'</span></div>'+
+      '<div class="watch-price-item" style="text-align:right"><span class="watch-price-label">Target</span><span class="watch-price-value" style="color:var(--gold)">'+(w.target??'—')+'</span></div>'+
+      '</div>'+
+      (upside!==null?'<span style="font-family:var(--font-mono);font-size:.75rem;color:'+uc+';margin-bottom:10px;display:block">'+(parseFloat(upside)>=0?'+':'')+upside+'% upside</span>':'')+
+      (w.catalyst?'<div class="watch-card-catalyst">💡 '+escHtml(w.catalyst)+'</div>':'')+
+      '<div class="watch-card-footer">'+
+      (w.conviction?convictionBadge(w.conviction):'<span></span>')+
+      '<div style="display:flex;align-items:center;gap:6px">'+
+      (w.isPublic?'<span title="Public" style="font-size:.85rem">🌐</span>':'<span title="Private" style="font-size:.85rem">🔒</span>')+
+      (isOwn?'<div class="watch-card-actions"><button class="row-action-btn" onclick="openAddWatch(\''+w.id+'\')">Edit</button><button class="row-action-btn danger" onclick="deleteWatch(\''+w.id+'\')">✕</button></div>':'')+
+      '</div>'+
+      '</div>'+
+      '</div>';
   }).join('');
 }
 
-document.querySelectorAll('#watch-conviction-picker .cpip').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('#watch-conviction-picker .cpip').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');});});
-document.querySelectorAll('.filter-btn').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterMarket=btn.dataset.filter;render();});});
-const searchEl=document.getElementById('watch-search');if(searchEl)searchEl.addEventListener('input',e=>{searchTerm=e.target.value;render();});
+document.querySelectorAll('#watch-conviction-picker .cpip').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('#watch-conviction-picker .cpip').forEach(function(b){b.classList.remove('selected');});btn.classList.add('selected');});});
+document.querySelectorAll('.filter-btn').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.filter-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');filterMarket=btn.dataset.filter;render();});});
+var searchEl=document.getElementById('watch-search');if(searchEl)searchEl.addEventListener('input',function(e){searchTerm=e.target.value;render();});
 
-StoreInit(render);
+StoreInit(function(){
+  updateAuthNav();
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()) showLoginPromptIfNeeded('.page-wrapper .container');
+  render();
+});

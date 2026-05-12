@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — Conviction Logs</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .auth-page { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    .auth-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:40px; width:100%; max-width:420px; animation:fadeUp 0.3s var(--ease); }
+    .auth-logo { text-align:center; margin-bottom:32px; }
+    .auth-logo-primary { font-family:var(--font-display); font-size:1.5rem; color:var(--text-primary); display:block; }
+    .auth-logo-sub { font-family:var(--font-mono); font-size:.625rem; color:var(--gold); letter-spacing:.15em; text-transform:uppercase; }
+    .auth-tabs { display:flex; gap:2px; background:var(--bg-secondary); border-radius:var(--radius-sm); padding:3px; margin-bottom:28px; }
+    .auth-tab { flex:1; padding:8px; border:none; border-radius:calc(var(--radius-sm) - 2px); background:transparent; color:var(--text-muted); font-family:var(--font-body); font-size:.875rem; font-weight:500; cursor:pointer; transition:all var(--duration) var(--ease); }
+    .auth-tab.active { background:var(--bg-card); color:var(--text-primary); box-shadow:0 1px 4px rgba(0,0,0,.3); }
+    .oauth-divider { display:flex; align-items:center; gap:12px; margin:20px 0; color:var(--text-muted); font-size:.75rem; font-family:var(--font-mono); }
+    .oauth-divider::before, .oauth-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+    .oauth-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-secondary); color:var(--text-secondary); font-family:var(--font-body); font-size:.875rem; font-weight:500; cursor:pointer; transition:all var(--duration) var(--ease); margin-bottom:8px; }
+    .oauth-btn:hover { border-color:var(--border-light); color:var(--text-primary); background:var(--bg-hover); }
+    .oauth-icon { width:18px; height:18px; flex-shrink:0; }
+    .auth-error { background:var(--red-dim); border:1px solid rgba(240,96,128,.3); color:var(--red); border-radius:var(--radius-sm); padding:10px 14px; font-size:.8125rem; margin-bottom:16px; display:none; }
+    .auth-success { background:var(--green-dim); border:1px solid rgba(62,207,142,.3); color:var(--green); border-radius:var(--radius-sm); padding:10px 14px; font-size:.8125rem; margin-bottom:16px; display:none; }
+    .btn-full { width:100%; justify-content:center; padding:11px; font-size:.9375rem; }
+    .auth-footer-note { text-align:center; margin-top:20px; font-size:.75rem; color:var(--text-muted); }
+    .auth-footer-note a { color:var(--gold); }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <a href="index.html">
+          <span class="auth-logo-primary">Conviction Logs</span>
+          <span class="auth-logo-sub">Investment Journal</span>
+        </a>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+        <button class="auth-tab"        id="tab-signup" onclick="switchTab('signup')">Create Account</button>
+      </div>
+
+      <div class="auth-error"   id="auth-error"></div>
+      <div class="auth-success" id="auth-success"></div>
+
+      <div id="email-form">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <div class="form-group" id="confirm-group" style="display:none">
+          <label>Confirm Password</label>
+          <input type="password" id="auth-confirm" placeholder="••••••••" />
+        </div>
+        <button class="btn btn-primary btn-full" id="auth-submit-btn" onclick="submitForm()">Sign In</button>
+      </div>
+
+      <div class="oauth-divider">or continue with</div>
+
+      <button class="oauth-btn" onclick="Auth.signInWithOAuth('github')">
+        <svg class="oauth-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        Continue with GitHub
+      </button>
+
+      <button class="oauth-btn" onclick="Auth.signInWithOAuth('google')">
+        <svg class="oauth-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <p class="auth-footer-note"><a href="index.html">← Back to journal</a></p>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    var currentTab = 'signin';
+    Auth.init().then(function() { if (Auth.isLoggedIn()) window.location.href = 'index.html'; });
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById('tab-signin').classList.toggle('active', tab === 'signin');
+      document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+      document.getElementById('confirm-group').style.display = tab === 'signup' ? 'block' : 'none';
+      document.getElementById('auth-submit-btn').textContent = tab === 'signin' ? 'Sign In' : 'Create Account';
+      clearMessages();
+    }
+
+    function showError(msg)   { var e=document.getElementById('auth-error');   e.textContent=msg; e.style.display='block'; document.getElementById('auth-success').style.display='none'; }
+    function showSuccess(msg) { var e=document.getElementById('auth-success'); e.textContent=msg; e.style.display='block'; document.getElementById('auth-error').style.display='none'; }
+    function clearMessages()  { document.getElementById('auth-error').style.display='none'; document.getElementById('auth-success').style.display='none'; }
+
+    async function submitForm() {
+      var email    = document.getElementById('auth-email').value.trim();
+      var password = document.getElementById('auth-password').value;
+      var btn      = document.getElementById('auth-submit-btn');
+      if (!email || !password) { showError('Please enter your email and password.'); return; }
+      if (currentTab === 'signup') {
+        var confirm = document.getElementById('auth-confirm').value;
+        if (password !== confirm) { showError('Passwords do not match.'); return; }
+        if (password.length < 6)  { showError('Password must be at least 6 characters.'); return; }
+      }
+      btn.disabled = true;
+      btn.textContent = currentTab === 'signin' ? 'Signing in…' : 'Creating account…';
+      clearMessages();
+      try {
+        if (currentTab === 'signin') {
+          await Auth.signIn(email, password);
+          window.location.href = 'index.html';
+        } else {
+          var result = await Auth.signUp(email, password);
+          if (result.access_token) { window.location.href = 'index.html'; }
+          else { showSuccess('Account created! Check your email to confirm, then sign in.'); btn.disabled=false; btn.textContent='Create Account'; }
+        }
+      } catch (e) {
+        showError(e.message);
+        btn.disabled = false;
+        btn.textContent = currentTab === 'signin' ? 'Sign In' : 'Create Account';
+      }
+    }
+    document.addEventListener('keydown', function(e) { if (e.key === 'Enter') submitForm(); });
+  </script>
+</body>
+</html>

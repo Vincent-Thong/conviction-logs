@@ -6,6 +6,7 @@
   <title>Conviction Logs — Investment Journal</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/auth.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
 </head>
 <body>
@@ -24,11 +25,17 @@
         <a href="watchlist.html" class="nav-link">Watchlist</a>
         <a href="settings.html"  class="nav-link">Settings</a>
       </div>
-      <div class="nav-actions">
-        <span id="sync-status-dot" title="Checking sync…" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9a84c;margin-right:4px;flex-shrink:0;transition:background .3s ease"></span>
-        <button class="btn btn-ghost btn-sm" onclick="window.location='journal.html?new=1'">+ New Entry</button>
+            <div class="nav-actions">
+        <span id="sync-status-dot" title="Checking..." style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9a84c;margin-right:4px;flex-shrink:0;transition:background .3s ease"></span>
+        <a href="login.html" id="nav-login-btn" class="btn btn-ghost btn-sm">Sign In</a>
+        <div id="nav-user-menu" class="nav-user-menu">
+          <div class="nav-user-initials" id="nav-user-initials">?</div>
+          <img class="nav-user-avatar" id="nav-user-avatar" src="" alt="" />
+          <span class="nav-user-name" id="nav-user-name"></span>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()">Sign Out</button>
+        </div>
       </div>
-    </div>
+</div>
   </nav>
 
   <!-- ── Main ───────────────────────────────────────── -->
@@ -122,6 +129,7 @@
   </main>
 
   <script src="js/store.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
   <script src="js/dashboard.js"></script>
 </body>

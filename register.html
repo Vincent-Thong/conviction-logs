@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account — Conviction Logs</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+
+      <div class="auth-logo">
+        <span class="auth-logo-primary">Conviction Logs</span>
+        <span class="auth-logo-sub">Investment Journal</span>
+      </div>
+
+      <h1 class="auth-title">Create account</h1>
+      <p class="auth-sub">Start journaling your investment thesis today.</p>
+
+      <!-- OAuth -->
+      <button class="oauth-btn" onclick="Auth.signInWithOAuth('google')">
+        <span class="oauth-icon">G</span> Continue with Google
+      </button>
+      <button class="oauth-btn" onclick="Auth.signInWithOAuth('github')">
+        <span class="oauth-icon">⌥</span> Continue with GitHub
+      </button>
+
+      <div class="auth-divider">or</div>
+
+      <div id="auth-error" class="auth-error"></div>
+
+      <div class="form-group">
+        <label>Display Name</label>
+        <input type="text" id="reg-displayname" placeholder="e.g. Vincent" autocomplete="name" />
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="reg-username" placeholder="e.g. vincent_thong" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="reg-password" placeholder="Min. 6 characters" autocomplete="new-password" />
+      </div>
+
+      <button class="btn btn-primary btn-full" onclick="doRegister()" id="reg-btn">Create Account</button>
+
+      <div class="auth-footer">
+        Already have an account? <a href="login.html">Sign in →</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    Auth.init().then(function(session) {
+      if (session) window.location.href = 'index.html';
+    });
+
+    async function doRegister() {
+      var displayName = document.getElementById('reg-displayname').value.trim();
+      var username    = document.getElementById('reg-username').value.trim().toLowerCase().replace(/\s+/g,'_');
+      var email       = document.getElementById('reg-email').value.trim();
+      var password    = document.getElementById('reg-password').value;
+      var btn         = document.getElementById('reg-btn');
+
+      document.getElementById('auth-error').style.display = 'none';
+
+      if (!displayName || !username || !email || !password) { showError('Please fill in all fields.'); return; }
+      if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
+      if (!/^[a-z0-9_]+$/.test(username)) { showError('Username can only contain letters, numbers and underscores.'); return; }
+
+      btn.textContent = 'Creating account…';
+      btn.disabled    = true;
+
+      try {
+        await Auth.signUp(email, password, username, displayName);
+        window.location.href = 'index.html';
+      } catch (e) {
+        showError(e.message);
+        btn.textContent = 'Create Account';
+        btn.disabled    = false;
+      }
+    }
+
+    function showError(msg) {
+      var b = document.getElementById('auth-error');
+      b.textContent   = msg;
+      b.style.display = 'block';
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doRegister();
+    });
+  </script>
+</body>
+</html>

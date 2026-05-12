@@ -1,0 +1,208 @@
+/* auth.css — user menu, public/private toggle, author badges */
+
+/* ── User menu in nav ───────────────────────────────────────── */
+.nav-user-menu {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  display: none;
+}
+
+.nav-user-name {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-user-initials {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gold-glow);
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Public / Private toggle ────────────────────────────────── */
+.visibility-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+  user-select: none;
+}
+
+.visibility-toggle:hover {
+  border-color: var(--border-light);
+}
+
+.visibility-toggle.is-public {
+  border-color: rgba(62, 207, 142, 0.3);
+  background: var(--green-dim);
+}
+
+.visibility-icon {
+  font-size: 0.875rem;
+}
+
+.visibility-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.visibility-toggle.is-public .visibility-label {
+  color: var(--green);
+}
+
+.visibility-switch {
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--border-light);
+  position: relative;
+  transition: background var(--duration) var(--ease);
+  flex-shrink: 0;
+}
+
+.visibility-switch::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: white;
+  top: 3px;
+  left: 3px;
+  transition: left var(--duration) var(--ease);
+}
+
+.visibility-toggle.is-public .visibility-switch {
+  background: var(--green);
+}
+
+.visibility-toggle.is-public .visibility-switch::after {
+  left: 17px;
+}
+
+/* ── Author badge on cards ──────────────────────────────────── */
+.author-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.author-badge-avatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.5rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.author-badge-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Mine / Community tabs ──────────────────────────────────── */
+.view-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  width: fit-content;
+  margin-bottom: 24px;
+}
+
+.view-tab {
+  padding: 6px 18px;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+
+.view-tab.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+/* ── Login prompt banner ────────────────────────────────────── */
+.login-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--gold-glow);
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.login-prompt-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.login-prompt-text strong {
+  color: var(--gold);
+}
+
+/* ── Own vs others indicator ────────────────────────────────── */
+.mine-indicator {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--gold-glow);
+  border: 1px solid rgba(201,168,76,0.2);
+  padding: 1px 6px;
+  border-radius: 99px;
+}

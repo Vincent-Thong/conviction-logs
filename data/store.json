@@ -1,18 +1,5 @@
 {
   "positions": [],
   "entries": [],
-  "watchlist": [
-    {
-      "id": "mov84k0l4dul",
-      "ticker": "9988",
-      "name": "Alibaba Group",
-      "exchange": "HK",
-      "price": null,
-      "target": null,
-      "catalyst": "",
-      "notes": "",
-      "conviction": null,
-      "createdAt": 1778142487125
-    }
-  ]
+  "watchlist": []
 }

@@ -1,17 +1,20 @@
 /* journal.js */
-let editingEntryId=null, searchTerm='', typeFilter='all';
+var editingEntryId=null, searchTerm='', typeFilter='all', viewTab='all';
+var entryVisToggle = null;
 function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 function openNewEntry(id){
+  if(typeof Auth==='undefined'||!Auth.isLoggedIn()){window.location.href='login.html';return;}
   editingEntryId=id||null;
-  ['entry-title','entry-ticker','entry-tags','entry-body'].forEach(fid=>{const el=document.getElementById(fid);if(el)el.value='';});
+  ['entry-title','entry-ticker','entry-tags','entry-body'].forEach(function(fid){var el=document.getElementById(fid);if(el)el.value='';});
   document.getElementById('entry-type').value='thesis';
   document.getElementById('entry-exchange').value='';
   document.getElementById('entry-date').value=new Date().toISOString().slice(0,10);
-  document.querySelectorAll('#entry-conviction-picker .cpip').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(b){b.classList.remove('selected');});
   document.getElementById('entry-modal-title').textContent='New Journal Entry';
+  var initPublic = false;
   if(id){
-    const e=Store.getEntries().find(x=>x.id===id);
+    var e=Store.getEntries().find(function(x){return x.id===id;});
     if(e){
       document.getElementById('entry-modal-title').textContent='Edit Entry';
       document.getElementById('entry-title').value=e.title||'';
@@ -22,29 +25,42 @@ function openNewEntry(id){
       document.getElementById('entry-body').value=e.body||'';
       document.getElementById('entry-tags').value=(e.tags||[]).join(', ');
       setConvictionPicker('entry-conviction-picker',e.conviction);
+      initPublic = e.isPublic || false;
     }
   }
+  entryVisToggle = makeVisibilityToggle('entry-visibility', initPublic);
   document.getElementById('entry-modal').style.display='flex';
 }
 
 async function saveEntry(){
-  const title=document.getElementById('entry-title').value.trim();
+  var title=document.getElementById('entry-title').value.trim();
   if(!title){alert('Title is required.');return;}
-  const body=document.getElementById('entry-body').value.trim();
+  var body=document.getElementById('entry-body').value.trim();
   if(!body){alert('Entry body is required.');return;}
-  const entry={id:editingEntryId,title,type:document.getElementById('entry-type').value,ticker:document.getElementById('entry-ticker').value.trim().toUpperCase()||null,exchange:document.getElementById('entry-exchange').value||null,date:document.getElementById('entry-date').value,body,tags:document.getElementById('entry-tags').value.split(',').map(t=>t.trim()).filter(Boolean),conviction:getConvictionPicker('entry-conviction-picker')};
+  var entry={id:editingEntryId,title:title,type:document.getElementById('entry-type').value,ticker:document.getElementById('entry-ticker').value.trim().toUpperCase()||null,exchange:document.getElementById('entry-exchange').value||null,date:document.getElementById('entry-date').value,body:body,tags:document.getElementById('entry-tags').value.split(',').map(function(t){return t.trim();}).filter(Boolean),conviction:getConvictionPicker('entry-conviction-picker'),isPublic:entryVisToggle?entryVisToggle.getValue():false};
   await Store.saveEntry(entry);
   closeModal('entry-modal');
   render();
 }
 
 function viewEntry(id){
-  const e=Store.getEntries().find(x=>x.id===id);if(!e)return;
+  var e=Store.getEntries().find(function(x){return x.id===id;});if(!e)return;
   document.getElementById('view-title').textContent=e.title;
   document.getElementById('view-body').textContent=e.body;
-  document.getElementById('view-meta').innerHTML=[`<span>${formatDate(e.date)}</span>`,`<span class="badge ${typeBadgeClass(e.type)}">${e.type}</span>`,e.ticker?`<span class="ticker" style="color:var(--text-secondary)">${escHtml(e.ticker)}</span>`:'',e.exchange?exchangeBadge(e.exchange):'',e.conviction?convictionBadge(e.conviction):''].filter(Boolean).join('<span style="margin:0 6px;color:var(--border)">·</span>');
-  document.getElementById('view-tags').innerHTML=(e.tags||[]).map(t=>`<span class="tag">${escHtml(t)}</span>`).join('');
-  document.getElementById('view-edit-btn').onclick=()=>{closeModal('view-modal');openNewEntry(id);};
+  var isOwn = typeof Auth!=='undefined'&&Auth.isLoggedIn()&&Store.isOwner(e);
+  document.getElementById('view-meta').innerHTML=[
+    '<span>'+formatDate(e.date)+'</span>',
+    '<span class="badge '+typeBadgeClass(e.type)+'">'+e.type+'</span>',
+    e.ticker?'<span class="ticker" style="color:var(--text-secondary)">'+escHtml(e.ticker)+'</span>':'',
+    e.exchange?exchangeBadge(e.exchange):'',
+    e.conviction?convictionBadge(e.conviction):'',
+    e.isPublic?'<span style="font-size:.8rem">🌐 Public</span>':'<span style="font-size:.8rem">🔒 Private</span>',
+    !isOwn?authorBadge(e):'',
+  ].filter(Boolean).join('<span style="margin:0 6px;color:var(--border)">·</span>');
+  document.getElementById('view-tags').innerHTML=(e.tags||[]).map(function(t){return '<span class="tag">'+escHtml(t)+'</span>';}).join('');
+  var editBtn = document.getElementById('view-edit-btn');
+  if (isOwn) { editBtn.style.display='inline-flex'; editBtn.onclick=function(){closeModal('view-modal');openNewEntry(id);}; }
+  else        { editBtn.style.display='none'; }
   document.getElementById('view-modal').style.display='flex';
 }
 
@@ -55,38 +71,72 @@ async function deleteEnt(id){
 }
 
 function render(){
-  let entries=Store.getEntries();
-  if(typeFilter!=='all') entries=entries.filter(e=>e.type===typeFilter);
-  if(searchTerm){const q=searchTerm.toLowerCase();entries=entries.filter(e=>(e.title||'').toLowerCase().includes(q)||(e.body||'').toLowerCase().includes(q)||(e.ticker||'').toLowerCase().includes(q));}
-  const container=document.getElementById('journal-entries');
-  if(!entries.length){container.innerHTML=`<div class="empty-state"><div class="empty-state-icon">✦</div><p class="empty-state-title">${searchTerm||typeFilter!=='all'?'No matching entries':'Your journal is empty'}</p><br/><button class="btn btn-primary" onclick="openNewEntry()">Write First Entry</button></div>`;return;}
-  container.innerHTML=entries.map(e=>`
-    <div class="journal-card" onclick="viewEntry('${e.id}')">
-      <div class="journal-card-top">
-        <span class="badge ${typeBadgeClass(e.type)}">${e.type}</span>
-        ${e.ticker?`<span class="ticker" style="font-size:.8125rem">${escHtml(e.ticker)}</span>`:''}
-        ${e.exchange?exchangeBadge(e.exchange):''}
-        ${e.conviction?convictionBadge(e.conviction):''}
-        <span class="journal-card-date">${formatDate(e.date)}</span>
-      </div>
-      <div class="journal-card-title">${escHtml(e.title)}</div>
-      <div class="journal-card-excerpt">${escHtml(e.body)}</div>
-      <div class="journal-card-footer">
-        ${(e.tags||[]).map(t=>`<span class="tag">${escHtml(t)}</span>`).join('')}
-        <div class="journal-card-actions" onclick="event.stopPropagation()">
-          <button class="row-action-btn" onclick="openNewEntry('${e.id}')">Edit</button>
-          <button class="row-action-btn danger" onclick="deleteEnt('${e.id}')">✕</button>
-        </div>
-      </div>
-    </div>`).join('');
+  var loggedIn = typeof Auth!=='undefined'&&Auth.isLoggedIn();
+  var all = Store.getEntries();
+  var entries;
+  if (!loggedIn) {
+    entries = all.filter(function(e){return e.isPublic;});
+  } else if (viewTab === 'mine') {
+    entries = Store.getMyEntries();
+  } else if (viewTab === 'community') {
+    entries = all.filter(function(e){return e.isPublic && !Store.isOwner(e);});
+  } else {
+    entries = all;
+  }
+  if(typeFilter!=='all') entries=entries.filter(function(e){return e.type===typeFilter;});
+  if(searchTerm){var q=searchTerm.toLowerCase();entries=entries.filter(function(e){return (e.title||'').toLowerCase().includes(q)||(e.body||'').toLowerCase().includes(q)||(e.ticker||'').toLowerCase().includes(q);});}
+  var container=document.getElementById('journal-entries');
+  if(!entries.length){
+    container.innerHTML='<div class="empty-state"><div class="empty-state-icon">✦</div><p class="empty-state-title">'+(searchTerm||typeFilter!=='all'?'No matching entries':loggedIn?'Your journal is empty':'No public entries yet')+'</p><br/>'+(loggedIn?'<button class="btn btn-primary" onclick="openNewEntry()">Write First Entry</button>':'<a href="login.html" class="btn btn-primary">Sign In to Write</a>')+'</div>';
+    return;
+  }
+  container.innerHTML=entries.map(function(e){
+    var isOwn=typeof Auth!=='undefined'&&Auth.isLoggedIn()&&Store.isOwner(e);
+    return '<div class="journal-card" onclick="viewEntry(\''+e.id+'\')">'+
+      '<div class="journal-card-top">'+
+      '<span class="badge '+typeBadgeClass(e.type)+'">'+e.type+'</span>'+
+      (e.ticker?'<span class="ticker" style="font-size:.8125rem">'+escHtml(e.ticker)+'</span>':'')+
+      (e.exchange?exchangeBadge(e.exchange):'')+
+      (e.conviction?convictionBadge(e.conviction):'')+
+      (e.isPublic?'<span style="font-size:.75rem" title="Public">🌐</span>':'<span style="font-size:.75rem" title="Private">🔒</span>')+
+      (isOwn?'<span class="mine-indicator">Mine</span>':authorBadge(e))+
+      '<span class="journal-card-date">'+formatDate(e.date)+'</span>'+
+      '</div>'+
+      '<div class="journal-card-title">'+escHtml(e.title)+'</div>'+
+      '<div class="journal-card-excerpt">'+escHtml(e.body)+'</div>'+
+      '<div class="journal-card-footer">'+
+      (e.tags||[]).map(function(t){return '<span class="tag">'+escHtml(t)+'</span>';}).join('')+
+      (isOwn?'<div class="journal-card-actions" onclick="event.stopPropagation()"><button class="row-action-btn" onclick="openNewEntry(\''+e.id+'\')">Edit</button><button class="row-action-btn danger" onclick="deleteEnt(\''+e.id+'\')">✕</button></div>':'')+
+      '</div>'+
+      '</div>';
+  }).join('');
 }
 
-document.querySelectorAll('#entry-conviction-picker .cpip').forEach(btn=>{btn.addEventListener('click',()=>{document.querySelectorAll('#entry-conviction-picker .cpip').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');});});
-const searchEl=document.getElementById('journal-search');if(searchEl)searchEl.addEventListener('input',e=>{searchTerm=e.target.value;render();});
-const filterEl=document.getElementById('journal-filter-type');if(filterEl)filterEl.addEventListener('change',e=>{typeFilter=e.target.value;render();});
+document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(b){b.classList.remove('selected');});btn.classList.add('selected');});});
+var searchEl=document.getElementById('journal-search');if(searchEl)searchEl.addEventListener('input',function(e){searchTerm=e.target.value;render();});
+var filterEl=document.getElementById('journal-filter-type');if(filterEl)filterEl.addEventListener('change',function(e){typeFilter=e.target.value;render();});
 
-StoreInit(()=>{
+StoreInit(function(){
+  updateAuthNav();
+  var loggedIn = typeof Auth!=='undefined'&&Auth.isLoggedIn();
+  // Insert Mine/Community tabs
+  var sectionHeader = document.querySelector('.section-header');
+  if(sectionHeader && loggedIn){
+    var tabs = document.createElement('div');
+    tabs.className='view-tabs';
+    tabs.innerHTML='<button class="view-tab active" data-tab="all">All</button><button class="view-tab" data-tab="mine">Mine</button><button class="view-tab" data-tab="community">Community</button>';
+    sectionHeader.parentNode.insertBefore(tabs, sectionHeader.nextSibling);
+    tabs.querySelectorAll('.view-tab').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        tabs.querySelectorAll('.view-tab').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        viewTab=btn.dataset.tab;
+        render();
+      });
+    });
+  }
+  if(!loggedIn) showLoginPromptIfNeeded('.page-wrapper .container');
   render();
-  const params=new URLSearchParams(window.location.search);
-  if(params.get('new')==='1')openNewEntry();
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('new')==='1') openNewEntry();
 });
