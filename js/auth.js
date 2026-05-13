@@ -65,47 +65,84 @@ var Auth = (function() {
     }
   }
 
+  // ── Parse token from URL (hash or query string) ─────────────
+  // Supabase can return tokens in either:
+  //   #access_token=...  (implicit flow)
+  //   ?access_token=...  (some providers)
+
+  function _parseTokenFromURL() {
+    var hash   = window.location.hash   || '';
+    var search = window.location.search || '';
+
+    // Try hash first (#access_token=...)
+    if (hash.includes('access_token')) {
+      return new URLSearchParams(hash.replace(/^#/, ''));
+    }
+    // Fall back to query string (?access_token=...)
+    if (search.includes('access_token')) {
+      return new URLSearchParams(search.replace(/^\?/, ''));
+    }
+    return null;
+  }
+
   // ── Init — restore session on page load ─────────────────────
 
   async function init() {
-    // Check for OAuth callback (hash fragment)
-    var hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      var params = new URLSearchParams(hash.replace('#', ''));
+    // Check for OAuth callback token in URL
+    var params = _parseTokenFromURL();
+
+    if (params && params.get('access_token')) {
       var accessToken  = params.get('access_token');
       var refreshToken = params.get('refresh_token');
       var expiresIn    = parseInt(params.get('expires_in') || '3600');
-      if (accessToken) {
+      var tokenType    = params.get('token_type');
+
+      console.log('[Auth] OAuth callback detected, access_token present');
+
+      try {
         var user = await _getUser(accessToken);
+        console.log('[Auth] User fetched:', user ? user.email : 'null');
+
         _saveSession({
           access_token:  accessToken,
           refresh_token: refreshToken,
           expires_at:    Date.now() / 1000 + expiresIn,
           user:          user,
         });
-        // Clean up URL
+
+        // Clean the URL so token isn't visible or re-parsed on refresh
         window.history.replaceState(null, '', window.location.pathname);
+
+        // Redirect to dashboard now that we're signed in
+        window.location.href = 'index.html';
         return _session;
+
+      } catch (e) {
+        console.error('[Auth] Failed to fetch user after OAuth:', e.message);
       }
     }
 
-    // Restore from localStorage
+    // No OAuth callback — restore from localStorage
     try {
-      var stored = JSON.parse(localStorage.getItem('cl_session'));
-      if (stored && stored.access_token) {
-        var now = Date.now() / 1000;
-        if (stored.expires_at && stored.expires_at < now) {
-          // Expired — try refresh
-          if (stored.refresh_token) {
-            await _refreshSession(stored.refresh_token);
-          } else {
-            _saveSession(null);
-          }
+      var raw = localStorage.getItem('cl_session');
+      if (!raw) return null;
+
+      var stored = JSON.parse(raw);
+      if (!stored || !stored.access_token) return null;
+
+      var now = Date.now() / 1000;
+      if (stored.expires_at && stored.expires_at < now) {
+        // Token expired — try to refresh
+        console.log('[Auth] Token expired, attempting refresh…');
+        if (stored.refresh_token) {
+          await _refreshSession(stored.refresh_token);
         } else {
-          _session = stored;
-          _user    = stored.user;
-          _updateNavUI();
+          _saveSession(null);
         }
+      } else {
+        _session = stored;
+        _user    = stored.user;
+        _updateNavUI();
       }
     } catch (e) {
       console.warn('[Auth] Session restore error:', e.message);
@@ -114,29 +151,34 @@ var Auth = (function() {
     return _session;
   }
 
-  // ── Public methods ──────────────────────────────────────────
+  // ── Public auth methods ─────────────────────────────────────
 
   async function signUp(email, password) {
-    var data = await _authRequest('/signup', { email, password });
+    var data = await _authRequest('/signup', { email: email, password: password });
     if (data.access_token) _saveSession(data);
     return data;
   }
 
   async function signIn(email, password) {
-    var data = await _authRequest('/token?grant_type=password', { email, password });
+    var data = await _authRequest('/token?grant_type=password', { email: email, password: password });
     _saveSession(data);
     return data;
   }
 
   async function signInWithOAuth(provider) {
-    // Redirect to Supabase OAuth — it will redirect back with token in hash
-    var redirectTo = encodeURIComponent(window.location.origin + window.location.pathname);
-    window.location.href = SUPABASE_URL + '/auth/v1/authorize?provider=' + provider + '&redirect_to=' + redirectTo;
+    // Always redirect back to login.html — init() will parse the token and redirect to index
+    var redirectTo = window.location.origin
+      + window.location.pathname.replace(/\/[^/]*$/, '')
+      + '/login.html';
+    console.log('[Auth] OAuth redirect_to:', redirectTo);
+    window.location.href = SUPABASE_URL
+      + '/auth/v1/authorize?provider=' + provider
+      + '&redirect_to=' + encodeURIComponent(redirectTo);
   }
 
   async function signOut() {
     try {
-      if (_session) {
+      if (_session && _session.access_token) {
         await fetch(SUPABASE_URL + '/auth/v1/logout', {
           method:  'POST',
           headers: {
@@ -145,51 +187,70 @@ var Auth = (function() {
           },
         });
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) { /* ignore errors on logout */ }
     _saveSession(null);
     window.location.href = 'index.html';
   }
+
+  // ── Getters ─────────────────────────────────────────────────
 
   function getUser()        { return _user; }
   function getSession()     { return _session; }
   function isLoggedIn()     { return !!(_session && _session.access_token); }
   function getAccessToken() { return _session ? _session.access_token : null; }
   function getUserId()      { return _user ? _user.id : null; }
+
   function getDisplayName() {
     if (!_user) return null;
-    return _user.user_metadata && (_user.user_metadata.full_name || _user.user_metadata.name || _user.user_metadata.user_name)
-      || _user.email.split('@')[0];
+    var meta = _user.user_metadata || {};
+    return meta.full_name || meta.name || meta.user_name || _user.email.split('@')[0];
   }
+
   function getAvatar() {
     if (!_user) return null;
-    return _user.user_metadata && (_user.user_metadata.avatar_url || _user.user_metadata.picture);
+    var meta = _user.user_metadata || {};
+    return meta.avatar_url || meta.picture || null;
   }
 
-  // ── Nav UI update ───────────────────────────────────────────
+  // ── Nav UI ──────────────────────────────────────────────────
 
   function _updateNavUI() {
-    var loginBtn  = document.getElementById('nav-login-btn');
-    var userMenu  = document.getElementById('nav-user-menu');
-    var userName  = document.getElementById('nav-user-name');
+    var loginBtn   = document.getElementById('nav-login-btn');
+    var userMenu   = document.getElementById('nav-user-menu');
+    var userName   = document.getElementById('nav-user-name');
     var userAvatar = document.getElementById('nav-user-avatar');
+    var userInit   = document.getElementById('nav-user-initials');
 
     if (isLoggedIn()) {
-      if (loginBtn)  loginBtn.style.display  = 'none';
-      if (userMenu)  userMenu.style.display  = 'flex';
-      if (userName)  userName.textContent    = getDisplayName() || 'Account';
-      if (userAvatar && getAvatar()) {
-        userAvatar.src = getAvatar();
+      if (loginBtn)  loginBtn.style.display = 'none';
+      if (userMenu)  userMenu.style.display = 'flex';
+      var name = getDisplayName() || 'Account';
+      if (userName)  userName.textContent   = name;
+      if (userInit)  userInit.textContent   = name.slice(0, 2).toUpperCase();
+      var avatar = getAvatar();
+      if (userAvatar && avatar) {
+        userAvatar.src           = avatar;
         userAvatar.style.display = 'block';
+        if (userInit) userInit.style.display = 'none';
       }
     } else {
-      if (loginBtn) loginBtn.style.display  = 'inline-flex';
-      if (userMenu) userMenu.style.display  = 'none';
+      if (loginBtn) loginBtn.style.display = 'inline-flex';
+      if (userMenu) userMenu.style.display = 'none';
     }
   }
 
   return {
-    init, signUp, signIn, signInWithOAuth, signOut,
-    getUser, getSession, isLoggedIn, getAccessToken,
-    getUserId, getDisplayName, getAvatar,
+    init:             init,
+    signUp:           signUp,
+    signIn:           signIn,
+    signInWithOAuth:  signInWithOAuth,
+    signOut:          signOut,
+    getUser:          getUser,
+    getSession:       getSession,
+    isLoggedIn:       isLoggedIn,
+    getAccessToken:   getAccessToken,
+    getUserId:        getUserId,
+    getDisplayName:   getDisplayName,
+    getAvatar:        getAvatar,
   };
 })();
