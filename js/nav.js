@@ -127,3 +127,49 @@ function showLoginPromptIfNeeded(containerSelector) {
     container.insertBefore(prompt, container.firstChild);
   }
 }
+
+// ── Author card helper ─────────────────────────────────────────
+// Renders full author + date block for public items
+function authorBlock(item) {
+  var profile  = Store.getProfile(item.userId);
+  var name     = profile.displayName || 'Anonymous';
+  var initials = name.slice(0, 2).toUpperCase();
+  var avatar   = profile.avatarUrl;
+  var date     = item.updatedAt || item.createdAt;
+  var dateStr  = date ? formatDateTime(date) : '';
+  var isOwn    = Store.isOwner(item);
+
+  var avatarHtml = avatar
+    ? '<img src="' + avatar + '" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" />'
+    : '<span style="width:22px;height:22px;border-radius:50%;background:var(--gold-glow);border:1px solid var(--gold-dim);color:var(--gold);font-family:var(--font-mono);font-size:.5rem;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">' + initials + '</span>';
+
+  return '<div class="author-block">' +
+    avatarHtml +
+    '<div class="author-block-info">' +
+    '<span class="author-block-name">' + escHtmlNav(name) + (isOwn ? ' <span class="mine-indicator">You</span>' : '') + '</span>' +
+    (dateStr ? '<span class="author-block-date">' + dateStr + '</span>' : '') +
+    '</div>' +
+    '</div>';
+}
+
+function escHtmlNav(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return '';
+  var d = new Date(dateStr);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
+    ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Owner action bar — shown on own public items so they can toggle or delete inline
+function ownerActions(item, onToggle, onDelete) {
+  if (!Store.isOwner(item)) return '';
+  return '<div class="owner-actions">' +
+    '<button class="owner-action-btn" onclick="' + onToggle + '" title="' + (item.isPublic ? 'Make Private' : 'Make Public') + '">' +
+    (item.isPublic ? '🔒 Make Private' : '🌐 Make Public') +
+    '</button>' +
+    '<button class="owner-action-btn danger" onclick="' + onDelete + '" title="Delete">Delete</button>' +
+    '</div>';
+}

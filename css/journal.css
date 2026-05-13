@@ -241,3 +241,7 @@
 
 .cpip:hover { border-color: var(--gold-dim); color: var(--gold); }
 .cpip.selected { background: var(--gold-glow); border-color: var(--gold); color: var(--gold); }
+
+.journal-card-author {
+  margin-top: 4px;
+}
