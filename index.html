@@ -24,6 +24,7 @@
         <a href="journal.html"   class="nav-link">Journal</a>
         <a href="watchlist.html" class="nav-link">Watchlist</a>
         <a href="settings.html"  class="nav-link">Settings</a>
+        <a href="admin.html"    class="nav-link" style="color:var(--red);opacity:.6">Admin</a>
       </div>
             <div class="nav-actions">
         <span id="sync-status-dot" title="Checking..." style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9a84c;margin-right:4px;flex-shrink:0;transition:background .3s ease"></span>
@@ -95,6 +96,16 @@
         </div>
       </section>
 
+
+      <!-- Following Feed -->
+      <section class="section animate-up delay-2">
+        <div class="section-header">
+          <h2 class="section-title">Following <span>Feed</span></h2>
+          <a href="journal.html" class="btn btn-ghost btn-sm">Browse All →</a>
+        </div>
+        <div id="following-feed" class="entries-list"></div>
+      </section>
+
       <!-- Watchlist snapshot -->
       <section class="section animate-up delay-3">
         <div class="section-header">
@@ -131,6 +142,8 @@
   <script src="js/store.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/follows.js"></script>
+  <script src="js/share.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
 </html>

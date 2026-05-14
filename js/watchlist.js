@@ -110,7 +110,7 @@ function render() {
         (w.conviction ? convictionBadge(w.conviction) : '<span></span>') +
       '</div>' +
       // Author block + owner actions
-      authorBlock(w) +
+      authorBlockWithFollow(w) +
       (isOwn
         ? '<div class="owner-actions" style="margin-top:8px">' +
             '<button class="owner-action-btn" onclick="toggleWatchVisibility(\'' + w.id + '\')">' + (w.isPublic ? '🔒 Make Private' : '🌐 Make Public') + '</button>' +
@@ -135,4 +135,5 @@ StoreInit(function() {
   updateAuthNav();
   if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) showLoginPromptIfNeeded('.page-wrapper .container');
   render();
+  Share.handleShareParam(openAddWatch);
 });

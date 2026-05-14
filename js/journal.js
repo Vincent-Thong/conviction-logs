@@ -84,13 +84,14 @@ function viewEntry(id) {
   ].filter(Boolean).join('<span style="margin:0 6px;color:var(--border)">·</span>');
 
   // Author block always shown
-  document.getElementById('view-author').innerHTML = authorBlock(e);
+  document.getElementById('view-author').innerHTML = authorBlockWithFollow(e);
 
   // Owner actions inside view modal
   document.getElementById('view-owner-actions').innerHTML = isOwn
     ? ownerActions(e,
         'toggleEntryVisibility(\'' + e.id + '\');closeModal(\'view-modal\');',
-        'deleteEntry(\'' + e.id + '\');closeModal(\'view-modal\');')
+        'deleteEntry(\'' + e.id + '\');closeModal(\'view-modal\');') +
+    (e.isPublic ? '<div style="margin-top:8px">' + Share.shareBtn('entry', e.id, e.title) + '</div>' : '')
     : '';
 
   document.getElementById('view-tags').innerHTML = (e.tags || []).map(function(t) { return '<span class="tag">' + escHtml(t) + '</span>'; }).join('');
@@ -147,7 +148,7 @@ function render() {
       '</div>' +
       // Author + date + owner actions at bottom of card
       '<div class="journal-card-author">' +
-        authorBlock(e) +
+        authorBlockWithFollow(e) +
         (isOwn ? '<div class="owner-actions" onclick="event.stopPropagation()">' +
           '<button class="owner-action-btn" onclick="toggleEntryVisibility(\'' + e.id + '\')" title="' + (e.isPublic ? 'Make Private' : 'Make Public') + '">' + (e.isPublic ? '🔒 Make Private' : '🌐 Make Public') + '</button>' +
           '<button class="owner-action-btn" onclick="openNewEntry(\'' + e.id + '\')" style="color:var(--text-secondary)">Edit</button>' +
@@ -188,4 +189,5 @@ StoreInit(function() {
   render();
   var params = new URLSearchParams(window.location.search);
   if (params.get('new') === '1') openNewEntry();
+  Share.handleShareParam(viewEntry);
 });

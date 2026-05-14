@@ -128,6 +128,7 @@ async function StoreInit(onReady) {
   console.log('[Store] StoreInit…');
   _setSyncDot('syncing');
   if (typeof Auth !== 'undefined') await Auth.init();
+  if (typeof Follows !== 'undefined') await Follows.load();
 
   try {
     var results = await Promise.all([

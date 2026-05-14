@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Conviction Logs</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<body>
+
+  <!-- Login gate -->
+  <div id="admin-gate" class="admin-gate">
+    <div class="admin-gate-card">
+      <div class="admin-gate-logo">
+        <span style="font-family:var(--font-display);font-size:1.25rem;color:var(--text-primary)">Admin Panel</span>
+        <span style="font-family:var(--font-mono);font-size:.625rem;color:var(--red);letter-spacing:.15em;text-transform:uppercase">Restricted Access</span>
+      </div>
+      <div class="auth-error" id="admin-error" style="display:none"></div>
+      <div class="form-group">
+        <label>Admin Password</label>
+        <input type="password" id="admin-password-input" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="verifyAdmin()">Enter Admin Panel</button>
+      <p style="text-align:center;margin-top:16px;font-size:.75rem"><a href="index.html" style="color:var(--text-muted)">← Back to site</a></p>
+    </div>
+  </div>
+
+  <!-- Admin dashboard (hidden until auth) -->
+  <div id="admin-panel" style="display:none">
+    <nav class="nav">
+      <div class="container nav-inner">
+        <div class="nav-logo">
+          <span class="nav-logo-primary">Admin Panel</span>
+          <span class="nav-logo-sub" style="color:var(--red)">Conviction Logs</span>
+        </div>
+        <div class="nav-links">
+          <a href="#" class="nav-link active" onclick="showTab('users')">Users</a>
+          <a href="#" class="nav-link" onclick="showTab('entries')">Journal</a>
+          <a href="#" class="nav-link" onclick="showTab('positions')">Portfolio</a>
+          <a href="#" class="nav-link" onclick="showTab('watchlist')">Watchlist</a>
+          <a href="#" class="nav-link" onclick="showTab('follows')">Follows</a>
+        </div>
+        <div class="nav-actions">
+          <button class="btn btn-ghost btn-sm" onclick="refreshAll()">↺ Refresh</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="adminLogout()">Lock</button>
+          <a href="index.html" class="btn btn-ghost btn-sm">← Site</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="page-wrapper">
+      <div class="container">
+
+        <!-- Stats bar -->
+        <div class="admin-stats animate-up">
+          <div class="stat-tile"><div class="stat-label">Total Users</div><div class="stat-value" id="a-users">—</div></div>
+          <div class="stat-tile"><div class="stat-label">Journal Entries</div><div class="stat-value" id="a-entries">—</div></div>
+          <div class="stat-tile"><div class="stat-label">Positions</div><div class="stat-value" id="a-positions">—</div></div>
+          <div class="stat-tile"><div class="stat-label">Watchlist Items</div><div class="stat-value" id="a-watchlist">—</div></div>
+          <div class="stat-tile"><div class="stat-label">Follows</div><div class="stat-value" id="a-follows">—</div></div>
+          <div class="stat-tile"><div class="stat-label">Public Items</div><div class="stat-value" id="a-public">—</div></div>
+        </div>
+
+        <!-- Tab: Users -->
+        <div id="tab-users" class="admin-tab section animate-up delay-1">
+          <div class="section-header">
+            <h2 class="section-title">All <span>Users</span></h2>
+            <input type="text" id="search-users" placeholder="Search users…" class="search-input" style="width:200px" oninput="filterTable('users-tbody', this.value)" />
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr>
+                <th>Name</th><th>Email</th><th>Provider</th>
+                <th>Entries</th><th>Positions</th><th>Watchlist</th><th>Followers</th><th>Following</th>
+                <th>Joined</th>
+              </tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab: Journal Entries -->
+        <div id="tab-entries" class="admin-tab section" style="display:none">
+          <div class="section-header">
+            <h2 class="section-title">All <span>Journal Entries</span></h2>
+            <input type="text" id="search-entries" placeholder="Search…" class="search-input" style="width:200px" oninput="filterTable('entries-tbody', this.value)" />
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Title</th><th>Author</th><th>Type</th><th>Ticker</th><th>Conviction</th><th>Visibility</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="entries-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab: Positions -->
+        <div id="tab-positions" class="admin-tab section" style="display:none">
+          <div class="section-header">
+            <h2 class="section-title">All <span>Positions</span></h2>
+            <input type="text" id="search-positions" placeholder="Search…" class="search-input" style="width:200px" oninput="filterTable('positions-tbody', this.value)" />
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Ticker</th><th>Author</th><th>Exchange</th><th>Entry Price</th><th>Target</th><th>Status</th><th>Visibility</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="positions-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab: Watchlist -->
+        <div id="tab-watchlist" class="admin-tab section" style="display:none">
+          <div class="section-header">
+            <h2 class="section-title">All <span>Watchlist Items</span></h2>
+            <input type="text" id="search-watchlist" placeholder="Search…" class="search-input" style="width:200px" oninput="filterTable('watchlist-tbody', this.value)" />
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Ticker</th><th>Name</th><th>Author</th><th>Exchange</th><th>Target</th><th>Visibility</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="watchlist-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab: Follows -->
+        <div id="tab-follows" class="admin-tab section" style="display:none">
+          <div class="section-header">
+            <h2 class="section-title">All <span>Follows</span></h2>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead><tr><th>Follower</th><th>Following</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="follows-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -173,3 +173,31 @@ function ownerActions(item, onToggle, onDelete) {
     '<button class="owner-action-btn danger" onclick="' + onDelete + '" title="Delete">Delete</button>' +
     '</div>';
 }
+
+// ── Enhanced author block with follow button ─────────────────
+function authorBlockWithFollow(item) {
+  var profile  = Store.getProfile(item.userId);
+  var name     = profile.displayName || 'Anonymous';
+  var initials = name.slice(0,2).toUpperCase();
+  var avatar   = profile.avatarUrl;
+  var date     = item.updatedAt || item.createdAt;
+  var dateStr  = date ? formatDateTime(date) : '';
+  var isOwn    = Store.isOwner(item);
+
+  var avatarHtml = avatar
+    ? '<img src="' + avatar + '" style="width:22px;height:22px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" />'
+    : '<span style="width:22px;height:22px;border-radius:50%;background:var(--gold-glow);border:1px solid var(--gold-dim);color:var(--gold);font-family:var(--font-mono);font-size:.5rem;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">' + initials + '</span>';
+
+  var followBtn = (typeof Follows !== 'undefined' && !isOwn)
+    ? Follows.followButton(item.userId, null)
+    : '';
+
+  return '<div class="author-block" onclick="event.stopPropagation()">' +
+    avatarHtml +
+    '<div class="author-block-info">' +
+      '<span class="author-block-name">' + escHtmlNav(name) + (isOwn ? ' <span class="mine-indicator">You</span>' : '') + '</span>' +
+      (dateStr ? '<span class="author-block-date">' + dateStr + '</span>' : '') +
+    '</div>' +
+    (followBtn ? '<div style="margin-left:auto">' + followBtn + '</div>' : '') +
+    '</div>';
+}
