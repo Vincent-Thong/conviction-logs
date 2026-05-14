@@ -57,10 +57,13 @@ var Auth = (function() {
   // Upsert profile into profiles table after login
   async function _syncProfile() {
     if (!_session || !_user) return;
+    var provider = (_user.app_metadata && _user.app_metadata.provider) || 'email';
     var profile = {
       id:           _user.id,
       display_name: getDisplayName(),
       avatar_url:   getAvatar(),
+      email:        _user.email || null,
+      provider:     provider,
     };
     await fetch(SUPABASE_URL + '/rest/v1/profiles', {
       method: 'POST',
