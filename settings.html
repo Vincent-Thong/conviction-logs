@@ -7,6 +7,7 @@
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/auth.css" />
+  <link rel="stylesheet" href="css/messages.css" />
   <style>
     .page-sub { font-size:.875rem; color:var(--text-muted); margin-top:6px; }
     .settings-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:8px; }
@@ -45,6 +46,10 @@
       </div>
             <div class="nav-actions">
         <span id="sync-status-dot" title="Checking..." style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9a84c;margin-right:4px;flex-shrink:0;transition:background .3s ease"></span>
+        <a href="notifications.html" class="btn btn-ghost btn-sm" id="nav-notif-btn" style="display:none">
+          🔔 <span id="nav-notif-count" class="notif-badge" style="display:none"></span>
+        </a>
+        <a href="messages.html" class="btn btn-ghost btn-sm" id="nav-msg-btn" style="display:none">💬</a>
         <a href="login.html" id="nav-login-btn" class="btn btn-ghost btn-sm">Sign In</a>
         <div id="nav-user-menu" class="nav-user-menu">
           <div class="nav-user-initials" id="nav-user-initials">?</div>
@@ -149,6 +154,7 @@
   <script src="js/store.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
+  <script src="js/notifications.js"></script>
   <script>
     async function testAndRefresh() {
       const pill = document.getElementById('status-pill');

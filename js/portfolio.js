@@ -154,6 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 StoreInit(function() {
   updateAuthNav();
+  if (typeof Notifications !== 'undefined' && typeof Auth !== 'undefined' && Auth.isLoggedIn()) Notifications.load().then(function() { Notifications.startPolling(); });
   if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) showLoginPromptIfNeeded('.page-wrapper .container');
   render();
 });

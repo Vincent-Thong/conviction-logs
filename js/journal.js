@@ -169,6 +169,7 @@ if (filterEl) filterEl.addEventListener('change', function(e) { typeFilter = e.t
 
 StoreInit(function() {
   updateAuthNav();
+  if (typeof Notifications !== 'undefined' && typeof Auth !== 'undefined' && Auth.isLoggedIn()) Notifications.load().then(function() { Notifications.startPolling(); });
   var loggedIn = typeof Auth !== 'undefined' && Auth.isLoggedIn();
   var sectionHeader = document.querySelector('.section-header');
   if (sectionHeader && loggedIn) {

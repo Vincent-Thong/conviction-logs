@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages — Conviction Logs</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+  <link rel="stylesheet" href="css/messages.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="nav-logo-primary">Conviction Logs</span>
+        <span class="nav-logo-sub">Investment Journal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">Dashboard</a>
+        <a href="portfolio.html" class="nav-link">Portfolio</a>
+        <a href="journal.html"   class="nav-link">Journal</a>
+        <a href="watchlist.html" class="nav-link">Watchlist</a>
+        <a href="settings.html"  class="nav-link">Settings</a>
+        <a href="admin.html"     class="nav-link" style="color:var(--red);opacity:.6">Admin</a>
+      </div>
+      <div class="nav-actions">
+        <span id="sync-status-dot" title="Checking..." style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9a84c;margin-right:4px;flex-shrink:0;transition:background .3s ease"></span>
+        <a href="notifications.html" class="btn btn-ghost btn-sm" id="nav-notif-btn" style="display:none">
+          🔔 <span id="nav-notif-count" class="notif-badge" style="display:none"></span>
+        </a>
+        <a href="login.html" id="nav-login-btn" class="btn btn-ghost btn-sm">Sign In</a>
+        <div id="nav-user-menu" class="nav-user-menu" style="display:none">
+          <div class="nav-user-initials" id="nav-user-initials">?</div>
+          <img class="nav-user-avatar" id="nav-user-avatar" src="" alt="" />
+          <span class="nav-user-name" id="nav-user-name"></span>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="page-wrapper">
+    <div class="container">
+      <div class="section animate-up">
+        <div class="section-header">
+          <h1 class="section-title">Private <span>Messages</span></h1>
+        </div>
+
+        <!-- Login gate -->
+        <div id="messages-login-gate" style="display:none">
+          <div class="empty-state">
+            <div class="empty-state-icon">💬</div>
+            <p class="empty-state-title">Sign in to use messages</p>
+            <br/><a href="login.html" class="btn btn-primary">Sign In</a>
+          </div>
+        </div>
+
+        <!-- Messages UI -->
+        <div id="messages-ui" class="messages-layout" style="display:none">
+
+          <!-- Conversation list -->
+          <div class="conv-list" id="conv-list">
+            <div class="conv-list-header">
+              <span style="font-family:var(--font-mono);font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em">Conversations</span>
+              <button class="btn btn-ghost btn-sm" onclick="openNewConv()">+ New</button>
+            </div>
+            <div id="conv-items"></div>
+          </div>
+
+          <!-- Message thread -->
+          <div class="msg-thread" id="msg-thread">
+            <div class="msg-thread-empty" id="msg-thread-empty">
+              <div class="empty-state-icon">💬</div>
+              <p class="empty-state-title" style="font-size:1rem">Select a conversation</p>
+              <p class="empty-state-text">Or start a new one</p>
+            </div>
+            <div id="msg-thread-active" style="display:none">
+              <div class="msg-thread-header" id="msg-thread-header"></div>
+              <div class="msg-list" id="msg-list"></div>
+              <div class="msg-composer">
+                <textarea id="msg-input" placeholder="Type a message…" rows="1" onkeydown="handleMsgKey(event)"></textarea>
+                <button class="btn btn-primary btn-sm" onclick="sendMessage()">Send</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer-inner">
+        <span class="footer-copy">© <span id="footer-year"></span> Conviction Logs</span>
+      </div>
+    </footer>
+  </main>
+
+  <!-- New conversation modal -->
+  <div id="new-conv-modal" class="modal-overlay" style="display:none">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title">New Message</h2>
+        <button class="modal-close" onclick="closeModal('new-conv-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Search user</label>
+          <input type="text" id="new-conv-search" placeholder="Name or email…" oninput="searchUsers(this.value)" />
+        </div>
+        <div id="user-search-results" class="user-search-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/follows.js"></script>
+  <script src="js/share.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/messages.js"></script>
+</body>
+</html>

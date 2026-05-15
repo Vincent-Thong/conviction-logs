@@ -56,6 +56,7 @@ function typeBadgeClass(type) {
 // ── Auth UI helpers ────────────────────────────────────────────
 function updateAuthNav() {
   if (typeof Auth === 'undefined') return;
+  updateNotifNav();
   var loginBtn   = document.getElementById('nav-login-btn');
   var userMenu   = document.getElementById('nav-user-menu');
   var userName   = document.getElementById('nav-user-name');
@@ -191,6 +192,9 @@ function authorBlockWithFollow(item) {
   var followBtn = (typeof Follows !== 'undefined' && !isOwn)
     ? Follows.followButton(item.userId, null)
     : '';
+  var msgBtn = (!isOwn && typeof Auth !== 'undefined' && Auth.isLoggedIn())
+    ? '<a href="messages.html?user=' + item.userId + '" class="btn btn-ghost btn-sm" style="margin-left:4px">💬</a>'
+    : '';
 
   return '<div class="author-block" onclick="event.stopPropagation()">' +
     avatarHtml +
@@ -198,6 +202,12 @@ function authorBlockWithFollow(item) {
       '<span class="author-block-name">' + escHtmlNav(name) + (isOwn ? ' <span class="mine-indicator">You</span>' : '') + '</span>' +
       (dateStr ? '<span class="author-block-date">' + dateStr + '</span>' : '') +
     '</div>' +
-    (followBtn ? '<div style="margin-left:auto">' + followBtn + '</div>' : '') +
+    ((followBtn || msgBtn) ? '<div style="margin-left:auto;display:flex;gap:4px;align-items:center">' + followBtn + msgBtn + '</div>' : '') +
     '</div>';
+}
+
+// ── Notification + message nav buttons ────────────────────────
+function updateNotifNav() {
+  var msgBtn = document.getElementById('nav-msg-btn');
+  if (msgBtn) msgBtn.style.display = Auth.isLoggedIn() ? 'inline-flex' : 'none';
 }

@@ -58,6 +58,7 @@ var Follows = (function() {
     });
     if (res.ok || res.status === 204) {
       if (_following.indexOf(userId) === -1) _following.push(userId);
+      if (typeof Notifications !== 'undefined') Notifications.create(userId, 'follow', Auth.getUserId(), null, null);
     }
     return res.ok || res.status === 204;
   }

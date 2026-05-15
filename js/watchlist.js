@@ -133,6 +133,7 @@ if (searchEl) searchEl.addEventListener('input', function(e) { searchTerm = e.ta
 
 StoreInit(function() {
   updateAuthNav();
+  if (typeof Notifications !== 'undefined' && typeof Auth !== 'undefined' && Auth.isLoggedIn()) Notifications.load().then(function() { Notifications.startPolling(); });
   if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) showLoginPromptIfNeeded('.page-wrapper .container');
   render();
   Share.handleShareParam(openAddWatch);

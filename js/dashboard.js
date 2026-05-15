@@ -98,6 +98,7 @@ function renderWatchlistSnapshot() {
 
 StoreInit(function() {
   updateAuthNav();
+  if (typeof Notifications !== 'undefined' && typeof Auth !== 'undefined' && Auth.isLoggedIn()) Notifications.load().then(function() { Notifications.startPolling(); });
   showLoginPromptIfNeeded('.page-wrapper .container');
   refreshStats();
   renderRecentEntries();
