@@ -71,6 +71,41 @@
           </div>
         </div>
 
+
+        <!-- Profile / Nickname -->
+        <div class="settings-card animate-up" style="margin-bottom:24px">
+          <h2 class="settings-card-title">Your <span style="color:var(--gold)">Profile</span></h2>
+          <p class="settings-card-desc">Set a nickname — this is the name other users see on your posts, watchlist, and journal entries.</p>
+
+          <div id="profile-not-logged-in" style="display:none">
+            <p style="font-size:.875rem;color:var(--text-muted)">Sign in to manage your profile.</p>
+            <a href="login.html" class="btn btn-primary btn-sm" style="margin-top:12px">Sign In</a>
+          </div>
+
+          <div id="profile-form" style="display:none">
+            <!-- Current identity -->
+            <div id="profile-identity" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md)">
+              <div id="profile-avatar-display" style="width:40px;height:40px;border-radius:50%;background:var(--gold-glow);border:1px solid var(--gold-dim);color:var(--gold);font-family:var(--font-mono);font-size:.75rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden"></div>
+              <div>
+                <div id="profile-name-display" style="font-size:.9375rem;font-weight:500;color:var(--text-primary)"></div>
+                <div id="profile-email-display" style="font-size:.75rem;color:var(--text-muted);margin-top:2px"></div>
+                <div id="profile-provider-display" style="font-size:.6875rem;color:var(--text-muted);font-family:var(--font-mono);margin-top:2px"></div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Nickname (shown publicly to all users)</label>
+              <input type="text" id="nickname-input" placeholder="e.g. ValueHunter_HK" maxlength="32" />
+              <span style="font-size:.75rem;color:var(--text-muted);margin-top:4px;display:block">Max 32 characters. Leave blank to use your account name.</span>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="btn btn-primary btn-sm" onclick="saveNickname()">Save Nickname</button>
+              <span id="nickname-status" style="font-family:var(--font-mono);font-size:.75rem;display:none"></span>
+            </div>
+          </div>
+        </div>
+
         <div class="settings-grid">
 
           <!-- Connection status -->
@@ -193,6 +228,7 @@
     StoreInit(() => {
       updateCounts();
       testAndRefresh();
+      loadProfileForm();
     });
   </script>
 </body>
