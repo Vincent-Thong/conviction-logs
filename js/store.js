@@ -11,12 +11,15 @@ var _profiles = {}; // keyed by user_id → { display_name, avatar_url }
 
 async function loadProfiles() {
   try {
-    var res = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,display_name,avatar_url', {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,display_name,nickname,avatar_url', {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
     });
     if (!res.ok) return;
     var rows = await res.json();
-    rows.forEach(function(r) { _profiles[r.id] = { displayName: r.display_name, avatarUrl: r.avatar_url }; });
+    rows.forEach(function(r) {
+      // Prefer nickname if set, fall back to display_name
+      _profiles[r.id] = { displayName: r.nickname || r.display_name, avatarUrl: r.avatar_url };
+    });
     console.log('[Store] Loaded', rows.length, 'profiles');
   } catch (e) {
     console.warn('[Store] Could not load profiles:', e.message);
