@@ -6,8 +6,8 @@
 var ADMIN_HASH        = 'bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24';
 var ADMIN_SESSION_KEY = 'cl_admin_auth';
 
-// Service role key — bypasses RLS, only used inside password-protected admin panel
-var ADMIN_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1cmZrem9zY21oaXVsaXpnd2F4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODEyMDg5OCwiZXhwIjoyMDkzNjk2ODk4fQ.TgZY1ND-73KBJNXPABbvD5RLNCnW2YnKYK9cIrC7vJs';
+// Edge Function URL — service key lives inside the function, never in the browser
+var ADMIN_EDGE_URL = 'https://wurfkzoscmhiulizgwax.supabase.co/functions/v1/admin-data';
 
 var _adminData = { users: [], entries: [], positions: [], watchlist: [], follows: [] };
 
@@ -23,6 +23,7 @@ async function verifyAdmin() {
   var hash = await sha256(pwd);
   if (hash !== ADMIN_HASH) { showAdminError('Incorrect password.'); return; }
   sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
+  sessionStorage.setItem('cl_admin_hash', hash);
   showAdminPanel();
 }
 
@@ -50,40 +51,37 @@ function showAdminPanel() {
   loadAllData();
 }
 
+async function _edgeCall(payload) {
+  var hash = sessionStorage.getItem('cl_admin_hash');
+  var res  = await fetch(ADMIN_EDGE_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+    body:    JSON.stringify(Object.assign({ passwordHash: hash }, payload)),
+  });
+  if (res.status === 401) { adminLogout(); throw new Error('Unauthorized'); }
+  if (!res.ok) throw new Error('Edge Function error ' + res.status);
+  var json = await res.json();
+  if (json.error) throw new Error(json.error);
+  return json.data;
+}
+
 async function loadAllData() {
-  // Use service role key to bypass RLS and read ALL data including private
-  var headers = {
-    'apikey':        ADMIN_SERVICE_KEY,
-    'Authorization': 'Bearer ' + ADMIN_SERVICE_KEY,
-  };
-
   try {
-    // Load profiles (users)
-    var r1 = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=*&order=created_at.desc', { headers: headers });
-    _adminData.users = r1.ok ? await r1.json() : [];
-
-    // Load ALL entries (public + private) via service role key
-    var r2 = await fetch(SUPABASE_URL + '/rest/v1/entries?select=id,data,user_id,is_public,created_at,updated_at&order=created_at.desc', { headers: headers });
-    _adminData.entries = r2.ok ? (await r2.json()).map(mapRow) : [];
-
-    var r3 = await fetch(SUPABASE_URL + '/rest/v1/positions?select=id,data,user_id,is_public,created_at,updated_at&order=created_at.desc', { headers: headers });
-    _adminData.positions = r3.ok ? (await r3.json()).map(mapRow) : [];
-
-    var r4 = await fetch(SUPABASE_URL + '/rest/v1/watchlist?select=id,data,user_id,is_public,created_at,updated_at&order=created_at.desc', { headers: headers });
-    _adminData.watchlist = r4.ok ? (await r4.json()).map(mapRow) : [];
-
-    var r5 = await fetch(SUPABASE_URL + '/rest/v1/follows?select=*&order=created_at.desc', { headers: headers });
-    _adminData.follows = r5.ok ? await r5.json() : [];
-
+    var data = await _edgeCall({ query: 'all' });
+    _adminData.users     = data.profiles  || [];
+    _adminData.entries   = (data.entries  || []).map(mapRow);
+    _adminData.positions = (data.positions|| []).map(mapRow);
+    _adminData.watchlist = (data.watchlist|| []).map(mapRow);
+    _adminData.follows   = data.follows   || [];
     renderStats();
     renderUsers();
     renderEntries();
     renderPositions();
     renderWatchlist();
     renderFollows();
-
   } catch (e) {
-    console.error('[Admin] loadAllData error:', e);
+    console.error('[Admin] loadAllData error:', e.message);
+    alert('Failed to load data: ' + e.message);
   }
 }
 
@@ -146,31 +144,18 @@ function filterTable(tbodyId, query) {
 // ── Delete helpers ─────────────────────────────────────────────
 async function adminDelete(table, id) {
   if (!confirm('Delete this record? This cannot be undone.')) return;
-  var res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id, {
-    method: 'DELETE',
-    headers: { 'apikey': ADMIN_SERVICE_KEY, 'Authorization': 'Bearer ' + ADMIN_SERVICE_KEY, 'Prefer': 'return=minimal' },
-  });
-  if (res.ok || res.status === 204) { alert('Deleted.'); loadAllData(); }
-  else alert('Delete failed: ' + res.status);
+  try {
+    await _edgeCall({ query: 'delete', table: table, id: id });
+    alert('Deleted.');
+    loadAllData();
+  } catch (e) { alert('Delete failed: ' + e.message); }
 }
 
 async function adminTogglePublic(table, id, currentlyPublic) {
-  // Fetch current row first to get sha/data
-  var res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id + '&select=*', {
-    headers: { 'apikey': ADMIN_SERVICE_KEY, 'Authorization': 'Bearer ' + ADMIN_SERVICE_KEY },
-  });
-  if (!res.ok) { alert('Failed to fetch record.'); return; }
-  var rows = await res.json();
-  if (!rows.length) { alert('Record not found.'); return; }
-  var row = rows[0];
-
-  var upd = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id, {
-    method: 'PATCH',
-    headers: { 'apikey': ADMIN_SERVICE_KEY, 'Authorization': 'Bearer ' + ADMIN_SERVICE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-    body: JSON.stringify({ is_public: !currentlyPublic }),
-  });
-  if (upd.ok || upd.status === 204) loadAllData();
-  else alert('Update failed: ' + upd.status);
+  try {
+    await _edgeCall({ query: 'toggle_public', table: table, id: id, isPublic: !currentlyPublic });
+    loadAllData();
+  } catch (e) { alert('Update failed: ' + e.message); }
 }
 
 // ── Render tables ──────────────────────────────────────────────
