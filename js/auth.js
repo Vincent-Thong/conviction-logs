@@ -64,6 +64,7 @@ var Auth = (function() {
       avatar_url:   getAvatar(),
       email:        _user.email || null,
       provider:     provider,
+      // nickname is user-set, don't overwrite it on each login
     };
     await fetch(SUPABASE_URL + '/rest/v1/profiles', {
       method: 'POST',
@@ -163,8 +164,45 @@ var Auth = (function() {
   function getUserId()      { return _user ? _user.id : null; }
   function getDisplayName() {
     if (!_user) return null;
+    // Prefer nickname stored in profiles table (loaded into _user.nickname by _syncProfile)
+    if (_user.nickname) return _user.nickname;
     var m = _user.user_metadata || {};
     return m.full_name || m.name || m.user_name || _user.email.split('@')[0];
+  }
+
+  async function updateNickname(nickname) {
+    if (!_session || !_user) throw new Error('Not logged in');
+    var trimmed = nickname.trim();
+    var res = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + _user.id, {
+      method: 'PATCH',
+      headers: {
+        'apikey':        SUPABASE_KEY,
+        'Authorization': 'Bearer ' + _session.access_token,
+        'Content-Type':  'application/json',
+        'Prefer':        'return=minimal',
+      },
+      body: JSON.stringify({ nickname: trimmed || null }),
+    });
+    if (!res.ok && res.status !== 204) throw new Error('Failed to update nickname');
+    // Update local user object so nav updates immediately
+    _user.nickname = trimmed || null;
+    _updateNavUI();
+  }
+
+  async function loadNickname() {
+    if (!_session || !_user) return;
+    try {
+      var res = await fetch(
+        SUPABASE_URL + '/rest/v1/profiles?id=eq.' + _user.id + '&select=nickname',
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + _session.access_token } }
+      );
+      if (!res.ok) return;
+      var rows = await res.json();
+      if (rows.length && rows[0].nickname) {
+        _user.nickname = rows[0].nickname;
+        _updateNavUI();
+      }
+    } catch (e) { console.warn('[Auth] loadNickname error:', e.message); }
   }
   function getAvatar() {
     if (!_user) return null;
@@ -192,5 +230,5 @@ var Auth = (function() {
     }
   }
 
-  return { init, signUp, signIn, signInWithOAuth, signOut, getUser, getSession, isLoggedIn, getAccessToken, getUserId, getDisplayName, getAvatar };
+  return { init, signUp, signIn, signInWithOAuth, signOut, getUser, getSession, isLoggedIn, getAccessToken, getUserId, getDisplayName, getAvatar, updateNickname, loadNickname };
 })();
