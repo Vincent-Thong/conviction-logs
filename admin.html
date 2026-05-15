@@ -141,6 +141,24 @@
     </main>
   </div>
 
+
+  <!-- Entry view modal -->
+  <div id="admin-entry-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <div>
+          <div class="modal-meta" id="admin-entry-meta"></div>
+          <h2 class="modal-title" id="admin-entry-title"></h2>
+        </div>
+        <button class="modal-close" onclick="document.getElementById('admin-entry-modal').style.display='none'">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-entry-body" style="font-size:.9375rem;line-height:1.75;color:var(--text-secondary);white-space:pre-wrap;margin-bottom:16px;min-height:80px"></div>
+        <div id="admin-entry-tags" style="display:flex;gap:6px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--border)"></div>
+      </div>
+    </div>
+  </div>
+
   <script src="js/store.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/nav.js"></script>
