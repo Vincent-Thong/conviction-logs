@@ -3,17 +3,11 @@
  * Password: Admin@1234 (SHA-256 stored client-side)
  */
 
-var ADMIN_HASH = 'bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24';
+var ADMIN_HASH        = 'bc78e58d55cde1346e68f8e5fe588dedf62fa457aa646a500a53347faff6ee24';
 var ADMIN_SESSION_KEY = 'cl_admin_auth';
 
-// ── Service role key for reading ALL data including private ────
-// Using anon key + RLS bypass via admin_config approach.
-// We fetch all data using multiple queries and merge.
-// Note: to truly read ALL private data you need a Supabase
-// service_role key — keep it server-side only. Here we use
-// a broader approach: fetch all public + all own rows per user.
-// For a real admin, use Supabase Edge Functions with service_role.
-// For now we load all rows visible to anon (public) + note limitation.
+// Service role key — bypasses RLS, only used inside password-protected admin panel
+var ADMIN_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1cmZrem9zY21oaXVsaXpnd2F4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODEyMDg5OCwiZXhwIjoyMDkzNjk2ODk4fQ.TgZY1ND-73KBJNXPABbvD5RLNCnW2YnKYK9cIrC7vJs';
 
 var _adminData = { users: [], entries: [], positions: [], watchlist: [], follows: [] };
 
@@ -57,9 +51,10 @@ function showAdminPanel() {
 }
 
 async function loadAllData() {
+  // Use service role key to bypass RLS and read ALL data including private
   var headers = {
-    'apikey':        SUPABASE_KEY,
-    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'apikey':        ADMIN_SERVICE_KEY,
+    'Authorization': 'Bearer ' + ADMIN_SERVICE_KEY,
   };
 
   try {
@@ -67,7 +62,7 @@ async function loadAllData() {
     var r1 = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=*&order=created_at.desc', { headers: headers });
     _adminData.users = r1.ok ? await r1.json() : [];
 
-    // Load all PUBLIC entries (anon key limitation — can't see private of others)
+    // Load ALL entries (public + private) via service role key
     var r2 = await fetch(SUPABASE_URL + '/rest/v1/entries?select=id,data,user_id,is_public,created_at,updated_at&order=created_at.desc', { headers: headers });
     _adminData.entries = r2.ok ? (await r2.json()).map(mapRow) : [];
 
@@ -153,7 +148,7 @@ async function adminDelete(table, id) {
   if (!confirm('Delete this record? This cannot be undone.')) return;
   var res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id, {
     method: 'DELETE',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Prefer': 'return=minimal' },
+    headers: { 'apikey': ADMIN_SERVICE_KEY, 'Authorization': 'Bearer ' + ADMIN_SERVICE_KEY, 'Prefer': 'return=minimal' },
   });
   if (res.ok || res.status === 204) { alert('Deleted.'); loadAllData(); }
   else alert('Delete failed: ' + res.status);
@@ -162,7 +157,7 @@ async function adminDelete(table, id) {
 async function adminTogglePublic(table, id, currentlyPublic) {
   // Fetch current row first to get sha/data
   var res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id + '&select=*', {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
+    headers: { 'apikey': ADMIN_SERVICE_KEY, 'Authorization': 'Bearer ' + ADMIN_SERVICE_KEY },
   });
   if (!res.ok) { alert('Failed to fetch record.'); return; }
   var rows = await res.json();
@@ -171,7 +166,7 @@ async function adminTogglePublic(table, id, currentlyPublic) {
 
   var upd = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + id, {
     method: 'PATCH',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    headers: { 'apikey': ADMIN_SERVICE_KEY, 'Authorization': 'Bearer ' + ADMIN_SERVICE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
     body: JSON.stringify({ is_public: !currentlyPublic }),
   });
   if (upd.ok || upd.status === 204) loadAllData();
@@ -216,12 +211,33 @@ function renderUsers() {
   }).join('');
 }
 
+function adminViewEntry(idx) {
+  var e = _adminData.entries[idx];
+  if (!e) return;
+  var profile = getProfileForUser(e.userId);
+  var author  = profile.display_name || 'Unknown';
+  var modal   = document.getElementById('admin-entry-modal');
+  document.getElementById('admin-entry-title').textContent  = e.title || '—';
+  document.getElementById('admin-entry-meta').innerHTML =
+    '<span class="badge ' + typeBadgeClass(e.type) + '">' + (e.type||'note') + '</span> ' +
+    (e.ticker ? '<span class="ticker" style="font-size:.8rem;margin-left:6px">' + escHtml(e.ticker) + '</span>' : '') +
+    ' &nbsp;·&nbsp; ' + escHtml(author) +
+    ' &nbsp;·&nbsp; ' + fmtDate(e.createdAt) +
+    ' &nbsp;·&nbsp; ' + (e.isPublic ? '🌐 Public' : '🔒 Private');
+  document.getElementById('admin-entry-body').textContent   = e.body || '(empty)';
+  document.getElementById('admin-entry-tags').innerHTML     = (e.tags||[]).map(function(t){ return '<span class="tag">' + escHtml(t) + '</span>'; }).join(' ');
+  modal.style.display = 'flex';
+}
+
 function renderEntries() {
   var tbody = document.getElementById('entries-tbody');
   if (!_adminData.entries.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state" style="padding:40px"><p class="empty-state-title">No entries</p></div></td></tr>'; return; }
-  tbody.innerHTML = _adminData.entries.map(function(e) {
+  tbody.innerHTML = _adminData.entries.map(function(e, idx) {
     return '<tr>' +
-      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(e.title||'—') + '</td>' +
+      '<td style="max-width:220px">' +
+        '<div style="font-size:.875rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px">' + escHtml(e.title||'—') + '</div>' +
+        (e.body ? '<div style="font-size:.7rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;margin-top:2px">' + escHtml(e.body.slice(0,80)) + '</div>' : '') +
+      '</td>' +
       '<td>' + userCell(e.userId) + '</td>' +
       '<td><span class="badge ' + typeBadgeClass(e.type) + '">' + (e.type||'—') + '</span></td>' +
       '<td class="mono">' + (e.ticker||'—') + '</td>' +
