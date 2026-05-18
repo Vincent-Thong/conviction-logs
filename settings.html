@@ -42,7 +42,7 @@
         <a href="portfolio.html" class="nav-link">Portfolio</a>
         <a href="journal.html"   class="nav-link">Journal</a>
         <a href="watchlist.html" class="nav-link">Watchlist</a>
-        <a href="settings.html"  class="nav-link active">Settings</a>
+        <a href="settings.html"  class="nav-link active">Settings &amp; Profile</a>
       </div>
             <div class="nav-actions">
         <span id="sync-status-dot" title="Checking..." style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9a84c;margin-right:4px;flex-shrink:0;transition:background .3s ease"></span>
@@ -225,7 +225,76 @@
       document.getElementById('count-watchlist').textContent = Store.getWatchlist().length;
     }
 
+    async function loadProfileForm() {
+      var notLoggedIn = document.getElementById('profile-not-logged-in');
+      var form        = document.getElementById('profile-form');
+
+      if (!Auth.isLoggedIn()) {
+        if (notLoggedIn) notLoggedIn.style.display = 'block';
+        if (form)        form.style.display        = 'none';
+        return;
+      }
+
+      if (notLoggedIn) notLoggedIn.style.display = 'none';
+      if (form)        form.style.display        = 'block';
+
+      var user     = Auth.getUser();
+      var name     = Auth.getDisplayName() || '';
+      var email    = user ? (user.email || '') : '';
+      var avatar   = Auth.getAvatar();
+      var provider = (user && user.app_metadata && user.app_metadata.provider) || 'email';
+
+      // Avatar
+      var avatarEl = document.getElementById('profile-avatar-display');
+      if (avatarEl) {
+        avatarEl.innerHTML = avatar
+          ? '<img src="' + avatar + '" style="width:100%;height:100%;object-fit:cover" />'
+          : name.slice(0,2).toUpperCase();
+      }
+
+      document.getElementById('profile-name-display').textContent  = name || '—';
+      document.getElementById('profile-email-display').textContent = email;
+      document.getElementById('profile-provider-display').textContent = 'via ' + provider;
+
+      // Load current nickname from Supabase
+      try {
+        var res = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + user.id + '&select=nickname', {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + Auth.getAccessToken() }
+        });
+        if (res.ok) {
+          var rows = await res.json();
+          var input = document.getElementById('nickname-input');
+          if (input && rows.length && rows[0].nickname) {
+            input.value = rows[0].nickname;
+          }
+        }
+      } catch (e) { console.warn('Could not load nickname:', e.message); }
+    }
+
+    async function saveNickname() {
+      var input  = document.getElementById('nickname-input');
+      var status = document.getElementById('nickname-status');
+      if (!input || !status) return;
+
+      var val = input.value.trim();
+      status.style.display = 'inline';
+      status.style.color   = 'var(--text-muted)';
+      status.textContent   = 'Saving…';
+
+      try {
+        await Auth.updateNickname(val);
+        status.style.color = 'var(--green)';
+        status.textContent = val ? '✓ Nickname saved — "' + val + '"' : '✓ Nickname cleared';
+        document.getElementById('profile-name-display').textContent = Auth.getDisplayName() || '—';
+      } catch (e) {
+        status.style.color = 'var(--red)';
+        status.textContent = '✗ ' + e.message;
+      }
+      setTimeout(function() { status.style.display = 'none'; }, 3000);
+    }
+
     StoreInit(() => {
+      updateAuthNav();
       updateCounts();
       testAndRefresh();
       loadProfileForm();
