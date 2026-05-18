@@ -82,12 +82,12 @@
             <a href="login.html" class="btn btn-primary btn-sm" style="margin-top:12px">Sign In</a>
           </div>
 
-          <div id="profile-form" style="display:none">
+          <div id="profile-form">
             <!-- Current identity -->
             <div id="profile-identity" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:14px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md)">
-              <div id="profile-avatar-display" style="width:40px;height:40px;border-radius:50%;background:var(--gold-glow);border:1px solid var(--gold-dim);color:var(--gold);font-family:var(--font-mono);font-size:.75rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden"></div>
+              <div id="profile-avatar-display" style="width:40px;height:40px;border-radius:50%;background:var(--gold-glow);border:1px solid var(--gold-dim);color:var(--gold);font-family:var(--font-mono);font-size:.75rem;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">?</div>
               <div>
-                <div id="profile-name-display" style="font-size:.9375rem;font-weight:500;color:var(--text-primary)"></div>
+                <div id="profile-name-display" style="font-size:.9375rem;font-weight:500;color:var(--text-primary)">Loading…</div>
                 <div id="profile-email-display" style="font-size:.75rem;color:var(--text-muted);margin-top:2px"></div>
                 <div id="profile-provider-display" style="font-size:.6875rem;color:var(--text-muted);font-family:var(--font-mono);margin-top:2px"></div>
               </div>
@@ -177,46 +177,29 @@
     </footer>
   </main>
 
-  <script src="js/store.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/nav.js"></script>
-  <script src="js/notifications.js"></script>
+  <script src="js/store.js?v=1779072838"></script>
+  <script src="js/auth.js?v=1779072838"></script>
+  <script src="js/nav.js?v=1779072838"></script>
+  <script src="js/notifications.js?v=1779072838"></script>
   <script>
     async function testAndRefresh() {
-      const pill = document.getElementById('status-pill');
+      var pill = document.getElementById('status-pill');
       pill.className = 'status-pill';
       pill.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span> Testing…';
-
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/positions?select=id&limit=1`, {
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+        var res = await fetch(SUPABASE_URL + '/rest/v1/positions?select=id&limit=1', {
+          headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
         });
         if (res.ok) {
           pill.className = 'status-pill green';
           pill.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span> Connected ✓';
         } else {
-          throw new Error(`status ${res.status}`);
+          throw new Error('status ' + res.status);
         }
       } catch (e) {
         pill.className = 'status-pill red';
-        pill.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span> Error: ${e.message}`;
+        pill.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span> Error: ' + e.message;
       }
-    }
-
-    async function confirmClear(table) {
-      if (!confirm(`Permanently delete ALL data from "${table}"? This cannot be undone.`)) return;
-      try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=neq.null`, {
-          method: 'DELETE',
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}`, 'Prefer': 'return=minimal' }
-        });
-        if (res.ok || res.status === 204) {
-          alert(`${table} cleared.`);
-          StoreInit(updateCounts);
-        } else {
-          alert(`Failed: ${res.status}`);
-        }
-      } catch (e) { alert(`Error: ${e.message}`); }
     }
 
     function updateCounts() {
@@ -293,7 +276,13 @@
       setTimeout(function() { status.style.display = 'none'; }, 3000);
     }
 
-    StoreInit(() => {
+    // Show form immediately on DOM ready — don't wait for StoreInit
+    document.addEventListener('DOMContentLoaded', function() {
+      // Small delay to let auth.js restore session from localStorage
+      setTimeout(loadProfileForm, 600);
+    });
+
+    StoreInit(function() {
       updateAuthNav();
       updateCounts();
       testAndRefresh();
