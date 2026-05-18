@@ -100,8 +100,68 @@ StoreInit(function() {
   updateAuthNav();
   if (typeof Notifications !== 'undefined' && typeof Auth !== 'undefined' && Auth.isLoggedIn()) Notifications.load().then(function() { Notifications.startPolling(); });
   showLoginPromptIfNeeded('.page-wrapper .container');
+  showNicknamePromptIfNeeded();
   refreshStats();
   renderRecentEntries();
   renderFollowingFeed();
   renderWatchlistSnapshot();
 });
+
+async function showNicknamePromptIfNeeded() {
+  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) return;
+  var user = Auth.getUser();
+  if (!user) return;
+
+  // Check if nickname is set
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + user.id + '&select=nickname', {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + Auth.getAccessToken() }
+    });
+    if (!res.ok) return;
+    var rows = await res.json();
+    var hasNickname = rows.length && rows[0].nickname;
+    if (hasNickname) return; // already set, don't show prompt
+
+    // Insert nickname prompt banner
+    var container = document.querySelector('.page-wrapper .container');
+    if (!container) return;
+    var existing = document.getElementById('nickname-prompt-banner');
+    if (existing) return;
+
+    var banner = document.createElement('div');
+    banner.id = 'nickname-prompt-banner';
+    banner.style.cssText = [
+      'display:flex',
+      'align-items:center',
+      'justify-content:space-between',
+      'gap:16px',
+      'background:var(--gold-glow)',
+      'border:1px solid rgba(201,168,76,.25)',
+      'border-radius:var(--radius-md)',
+      'padding:14px 20px',
+      'margin-bottom:8px',
+      'flex-wrap:wrap',
+      'animation:fadeUp .3s ease'
+    ].join(';');
+    banner.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px">' +
+        '<span style="font-size:1.25rem">👤</span>' +
+        '<div>' +
+          '<div style="font-size:.875rem;font-weight:500;color:var(--text-primary)">Set your nickname</div>' +
+          '<div style="font-size:.8125rem;color:var(--text-secondary);margin-top:2px">This is the name other users see on your posts. Go to <strong style="color:var(--gold)">Settings → Profile</strong> to set it.</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<a href="settings.html" class="btn btn-primary btn-sm">Set Nickname →</a>' +
+        '<button onclick="document.getElementById('nickname-prompt-banner').remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:4px" title="Dismiss">✕</button>' +
+      '</div>';
+
+    // Insert at top of container, after any existing login prompt
+    var loginPrompt = container.querySelector('.login-prompt');
+    if (loginPrompt) {
+      loginPrompt.after(banner);
+    } else {
+      container.insertBefore(banner, container.firstChild);
+    }
+  } catch (e) { /* silent fail */ }
+}
