@@ -179,6 +179,11 @@ function openNewEntry(id) {
   if (id) {
     var e = Store.getEntries().find(function(x) { return x.id === id; });
     if (e) {
+      // Verify ownership before allowing edit
+      if (!Store.isOwner(e)) {
+        alert('You can only edit your own entries.');
+        return;
+      }
       document.getElementById('entry-modal-title').textContent = 'Edit Entry';
       document.getElementById('entry-title').value    = e.title  || '';
       document.getElementById('entry-type').value     = e.type   || 'thesis';
@@ -205,6 +210,7 @@ async function saveEntry() {
   if (!body)  { alert('Entry body is required.'); return; }
   var entry = {
     id:         editingEntryId,
+    userId:     typeof Auth !== 'undefined' ? Auth.getUserId() : null,
     title:      title,
     type:       document.getElementById('entry-type').value,
     ticker:     document.getElementById('entry-ticker').value.trim().toUpperCase() || null,
