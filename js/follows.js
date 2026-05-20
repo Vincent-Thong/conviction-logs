@@ -46,7 +46,11 @@ var Follows = (function() {
   function getFollowers()   { return _followers; }
 
   async function follow(userId) {
-    if (!Auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
+    if (!Auth.isLoggedIn()) { 
+      sessionStorage.setItem('cl_return_url', window.location.href);
+      window.location.href = 'login.html'; 
+      return; 
+    }
     if (userId === Auth.getUserId()) return; // can't follow yourself
     var id  = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
     var headers = _headers();

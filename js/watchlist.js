@@ -4,7 +4,11 @@ var watchVisToggle = null;
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function openAddWatch(id) {
-  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
+  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { 
+    sessionStorage.setItem('cl_return_url', window.location.href);
+    window.location.href = 'login.html'; 
+    return; 
+  }
   editingWatchId = id || null;
   ['watch-ticker','watch-name','watch-price','watch-target','watch-catalyst','watch-notes'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
   document.getElementById('watch-exchange').value = 'HK';

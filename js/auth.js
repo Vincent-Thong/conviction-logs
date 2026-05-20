@@ -126,7 +126,16 @@ var Auth = (function() {
 
   async function signUp(email, password) {
     var data = await _authRequest('/signup', { email: email, password: password });
-    if (data.access_token) { _saveSession(data); await _syncProfile(); }
+    if (data.access_token) { 
+      _saveSession(data); 
+      await _syncProfile(); 
+      // Redirect back to the page user was on before signup, if stored
+      var returnUrl = sessionStorage.getItem('cl_return_url');
+      if (returnUrl) {
+        sessionStorage.removeItem('cl_return_url');
+        window.location.href = returnUrl;
+      }
+    }
     return data;
   }
 
@@ -134,6 +143,12 @@ var Auth = (function() {
     var data = await _authRequest('/token?grant_type=password', { email: email, password: password });
     _saveSession(data);
     await _syncProfile();
+    // Redirect back to the page user was on before login, if stored
+    var returnUrl = sessionStorage.getItem('cl_return_url');
+    if (returnUrl) {
+      sessionStorage.removeItem('cl_return_url');
+      window.location.href = returnUrl;
+    }
     return data;
   }
 
