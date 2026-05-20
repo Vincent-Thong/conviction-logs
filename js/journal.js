@@ -167,7 +167,11 @@ function getContentFromEditor() {
 }
 
 function openNewEntry(id) {
-  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
+  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { 
+    sessionStorage.setItem('cl_return_url', window.location.href);
+    window.location.href = 'login.html'; 
+    return; 
+  }
   editingEntryId = id || null;
   ['entry-title','entry-ticker','entry-tags'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
   document.getElementById('entry-type').value     = 'thesis';

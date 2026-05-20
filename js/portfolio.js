@@ -4,7 +4,11 @@ var visibilityToggle = null;
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function openAddPosition(id) {
-  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
+  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { 
+    sessionStorage.setItem('cl_return_url', window.location.href);
+    window.location.href = 'login.html'; 
+    return; 
+  }
   editingId = id || null;
   ['pos-ticker','pos-name','pos-entry-date','pos-entry-price','pos-target','pos-stop','pos-thesis'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
   document.getElementById('pos-exchange').value = 'HK';
