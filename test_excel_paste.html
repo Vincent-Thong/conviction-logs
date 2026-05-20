@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Excel Paste</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: #fff; }
+    textarea { width: 100%; height: 300px; background: #2a2a2a; color: #fff; border: 1px solid #444; padding: 10px; font-family: monospace; }
+    .info { margin-bottom: 20px; padding: 15px; background: #2a2a2a; border-radius: 8px; }
+    h2 { color: #c9a84c; }
+    code { background: #333; padding: 2px 6px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>📋 Test Excel Table Paste</h1>
+  
+  <div class="info">
+    <h2>How to test:</h2>
+    <ol>
+      <li>Create a table in Excel with some data</li>
+      <li>Select and copy the table (Ctrl+C)</li>
+      <li>Paste into the textarea below (Ctrl+V)</li>
+      <li>The HTML table will be converted to Markdown format automatically</li>
+    </ol>
+    <p><strong>Example Excel data:</strong></p>
+    <table border="1" style="border-collapse: collapse; margin: 10px 0;">
+      <tr><th>Ticker</th><th>Company</th><th>Price</th><th>Change %</th></tr>
+      <tr><td>0700.HK</td><td>Tencent</td><td>380.5</td><td>+2.3%</td></tr>
+      <tr><td>9988.HK</td><td>Alibaba</td><td>85.2</td><td>-1.5%</td></tr>
+      <tr><td>AAPL</td><td>Apple</td><td>178.5</td><td>+0.8%</td></tr>
+    </table>
+    <p><em>Copy the table above and paste below to test!</em></p>
+  </div>
+
+  <label for="test-area"><strong>Paste Excel table here:</strong></label>
+  <textarea id="test-area" placeholder="Press Ctrl+V to paste your Excel table here..."></textarea>
+
+  <script>
+    // Convert HTML table (from Excel paste) to Markdown-style table
+    function htmlTableToMarkdown(html) {
+      var parser = new DOMParser();
+      var doc = parser.parseFromString(html, 'text/html');
+      var tables = doc.querySelectorAll('table');
+      if (!tables.length) return null;
+      
+      var result = [];
+      tables.forEach(function(table) {
+        var rows = table.querySelectorAll('tr');
+        if (!rows.length) return;
+        
+        var markdownRows = [];
+        var maxCols = 0;
+        
+        // First pass: find max columns
+        rows.forEach(function(tr) {
+          var cells = tr.querySelectorAll('td, th');
+          if (cells.length > maxCols) maxCols = cells.length;
+        });
+        
+        rows.forEach(function(tr, rowIdx) {
+          var cells = Array.from(tr.querySelectorAll('td, th'));
+          var cellTexts = [];
+          
+          for (var i = 0; i < maxCols; i++) {
+            var cell = cells[i];
+            var text = cell ? cell.textContent.trim().replace(/\|/g, '\\|') : '';
+            cellTexts.push(text);
+          }
+          
+          var rowStr = '| ' + cellTexts.join(' | ') + ' |';
+          markdownRows.push(rowStr);
+          
+          // Add separator after header row
+          if (rowIdx === 0) {
+            var separator = '| ' + Array(maxCols).fill('---').join(' | ') + ' |';
+            markdownRows.push(separator);
+          }
+        });
+        
+        if (markdownRows.length) {
+          result.push(markdownRows.join('\n'));
+        }
+      });
+      
+      return result.length ? result.join('\n\n') : null;
+    }
+
+    // Handle paste event for Excel table conversion
+    function handlePasteEvent(e) {
+      var clipboardData = e.clipboardData || window.clipboardData;
+      if (!clipboardData) return;
+      
+      var htmlData = clipboardData.getData('text/html');
+      if (!htmlData || !htmlData.includes('<table')) return;
+      
+      var markdown = htmlTableToMarkdown(htmlData);
+      if (!markdown) return;
+      
+      e.preventDefault();
+      
+      var textarea = e.target;
+      var start = textarea.selectionStart;
+      var end = textarea.selectionEnd;
+      var value = textarea.value;
+      
+      // Insert markdown table at cursor position
+      textarea.value = value.substring(0, start) + '\n\n' + markdown + '\n\n' + value.substring(end);
+      
+      // Update cursor position
+      var newPos = start + markdown.length + 4; // +4 for newlines
+      textarea.setSelectionRange(newPos, newPos);
+      
+      console.log('✅ Table converted to Markdown!');
+    }
+
+    // Attach paste handler
+    document.getElementById('test-area').addEventListener('paste', handlePasteEvent);
+  </script>
+</body>
+</html>

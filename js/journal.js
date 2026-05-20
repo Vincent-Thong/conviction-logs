@@ -1,5 +1,5 @@
 /* journal.js */
-var editingEntryId = null, searchTerm = '', typeFilter = 'all', viewTab = 'all';
+var editingEntryId = null, searchTerm = '', typeFilter = 'all', viewTab = '';
 var entryVisToggle = null;
 var editorInstance = null;
 
@@ -392,6 +392,13 @@ function render() {
 document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(btn) {
   btn.addEventListener('click', function() { document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); });
 });
+
+// Attach paste handler to entry body textarea
+var entryBodyEl = document.getElementById('entry-body');
+if (entryBodyEl) {
+  entryBodyEl.addEventListener('paste', handlePasteEvent);
+}
+
 var searchEl = document.getElementById('journal-search');
 if (searchEl) searchEl.addEventListener('input', function(e) { searchTerm = e.target.value; render(); });
 var filterEl = document.getElementById('journal-filter-type');
