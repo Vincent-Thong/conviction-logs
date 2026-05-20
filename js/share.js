@@ -22,7 +22,10 @@ var Share = (function() {
         var orig = btn.textContent;
         btn.textContent = 'Copied!';
         btn.style.color = 'var(--green)';
-        setTimeout(function() { btn.textContent = orig; btn.style.color = ''; }, 2000);
+        setTimeout(function() { 
+          btn.textContent = orig; 
+          btn.style.color = ''; 
+        }, 2000);
       }
     } catch (e) {
       // Fallback
@@ -32,7 +35,13 @@ var Share = (function() {
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      if (btn) { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy Link'; }, 2000); }
+      if (btn) { 
+        var origText = btn.textContent;
+        btn.textContent = 'Copied!'; 
+        setTimeout(function() { 
+          btn.textContent = origText; 
+        }, 2000); 
+      }
     }
   }
 
@@ -64,7 +73,7 @@ var Share = (function() {
       '</div>' +
       '<div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:14px;font-family:var(--font-mono);font-size:.7rem;color:var(--text-muted);word-break:break-all">' + escHtmlShare(url) + '</div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-        '<button class="btn btn-primary btn-sm" onclick="Share.copyLink(null,null,this);navigator.clipboard.writeText(\'' + escHtmlShare(url) + '\');this.textContent=\'Copied!\';setTimeout(function(){this.textContent=\'Copy Link\';}.bind(this),2000)">Copy Link</button>' +
+        '<button class="btn btn-primary btn-sm" onclick="var u=\'' + escHtmlShare(url) + '\';navigator.clipboard.writeText(u).then(function(){var b=this;b.textContent=\'Copied!\';setTimeout(function(){b.textContent=\'Copy Link\';},2000);}.bind(this));">Copy Link</button>' +
         '<a class="btn btn-ghost btn-sm" href="https://twitter.com/intent/tweet?url=' + encodedUrl + '&text=' + encodedTitle + '" target="_blank" rel="noopener">Twitter / X</a>' +
         '<a class="btn btn-ghost btn-sm" href="https://t.me/share/url?url=' + encodedUrl + '&text=' + encodedTitle + '" target="_blank" rel="noopener">Telegram</a>' +
         '<a class="btn btn-ghost btn-sm" href="whatsapp://send?text=' + encodedTitle + '%20' + encodedUrl + '" target="_blank" rel="noopener">WhatsApp</a>' +

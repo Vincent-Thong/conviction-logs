@@ -1,7 +1,87 @@
 /* journal.js */
-var editingEntryId = null, searchTerm = '', typeFilter = 'all', viewTab = 'all';
+var editingEntryId = null, searchTerm = '', typeFilter = 'all', viewTab = '';
 var entryVisToggle = null;
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Convert HTML table (from Excel paste) to Markdown-style table
+function htmlTableToMarkdown(html) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(html, 'text/html');
+  var tables = doc.querySelectorAll('table');
+  if (!tables.length) return null;
+  
+  var result = [];
+  tables.forEach(function(table) {
+    var rows = table.querySelectorAll('tr');
+    if (!rows.length) return;
+    
+    var markdownRows = [];
+    var maxCols = 0;
+    
+    // First pass: find max columns
+    rows.forEach(function(tr) {
+      var cells = tr.querySelectorAll('td, th');
+      if (cells.length > maxCols) maxCols = cells.length;
+    });
+    
+    rows.forEach(function(tr, rowIdx) {
+      var cells = Array.from(tr.querySelectorAll('td, th'));
+      var cellTexts = [];
+      
+      for (var i = 0; i < maxCols; i++) {
+        var cell = cells[i];
+        var text = cell ? cell.textContent.trim().replace(/\|/g, '\\|') : '';
+        cellTexts.push(text);
+      }
+      
+      var rowStr = '| ' + cellTexts.join(' | ') + ' |';
+      markdownRows.push(rowStr);
+      
+      // Add separator after header row
+      if (rowIdx === 0) {
+        var separator = '| ' + Array(maxCols).fill('---').join(' | ') + ' |';
+        markdownRows.push(separator);
+      }
+    });
+    
+    if (markdownRows.length) {
+      result.push(markdownRows.join('\n'));
+    }
+  });
+  
+  return result.length ? result.join('\n\n') : null;
+}
+
+// Handle paste event for Excel table conversion
+function handlePasteEvent(e) {
+  var clipboardData = e.clipboardData || window.clipboardData;
+  if (!clipboardData) return;
+  
+  var htmlData = clipboardData.getData('text/html');
+  if (!htmlData || !htmlData.includes('<table')) return;
+  
+  var markdown = htmlTableToMarkdown(htmlData);
+  if (!markdown) return;
+  
+  e.preventDefault();
+  
+  var textarea = e.target;
+  var start = textarea.selectionStart;
+  var end = textarea.selectionEnd;
+  var value = textarea.value;
+  
+  // Insert markdown table at cursor position
+  textarea.value = value.substring(0, start) + '\n\n' + markdown + '\n\n' + value.substring(end);
+  
+  // Update cursor position
+  var newPos = start + markdown.length + 4; // +4 for newlines
+  textarea.setSelectionRange(newPos, newPos);
+  
+  // Trigger input event for any listeners
+  var event = document.createEvent('HTMLEvents');
+  event.initEvent('input', true, false);
+  textarea.dispatchEvent(event);
+}
 
 function openNewEntry(id) {
   if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
@@ -162,6 +242,13 @@ function render() {
 document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(btn) {
   btn.addEventListener('click', function() { document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); });
 });
+
+// Attach paste handler to entry body textarea
+var entryBodyEl = document.getElementById('entry-body');
+if (entryBodyEl) {
+  entryBodyEl.addEventListener('paste', handlePasteEvent);
+}
+
 var searchEl = document.getElementById('journal-search');
 if (searchEl) searchEl.addEventListener('input', function(e) { searchTerm = e.target.value; render(); });
 var filterEl = document.getElementById('journal-filter-type');

@@ -153,7 +153,7 @@ async function showNicknamePromptIfNeeded() {
       '</div>' +
       '<div style="display:flex;gap:8px;align-items:center">' +
         '<a href="settings.html" class="btn btn-primary btn-sm">Set Nickname →</a>' +
-        '<button onclick="document.getElementById('nickname-prompt-banner').remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:4px" title="Dismiss">✕</button>' +
+        '<button onclick="document.getElementById(\'nickname-prompt-banner\').remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem;padding:4px" title="Dismiss">✕</button>' +
       '</div>';
 
     // Insert at top of container, after any existing login prompt

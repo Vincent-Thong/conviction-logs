@@ -14,7 +14,10 @@ async function loadProfiles() {
     var res = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,display_name,nickname,avatar_url', {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY },
     });
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.warn('[Store] Failed to load profiles:', res.status);
+      return;
+    }
     var rows = await res.json();
     rows.forEach(function(r) {
       // Prefer nickname if set, fall back to display_name
@@ -29,6 +32,9 @@ async function loadProfiles() {
 function getProfile(userId) {
   return _profiles[userId] || { displayName: 'Anonymous', avatarUrl: null };
 }
+
+// Expose _profiles globally for other modules
+window._profiles = _profiles;
 
 /* ── Supabase REST helper ─────────────────────────────────────── */
 var db = (function() {
