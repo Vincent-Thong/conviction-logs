@@ -183,7 +183,10 @@ function _showError(msg) {
 }
 
 function _isOwner(item) {
-  return typeof Auth !== 'undefined' && Auth.isLoggedIn() && item.userId === Auth.getUserId();
+  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) return false;
+  var currentUserId = Auth.getUserId();
+  // Item is owned by current user if userId matches
+  return item.userId === currentUserId;
 }
 
 async function _persist(table, id, item) {
@@ -223,6 +226,10 @@ var Store = {
   saveEntry: async function(entry) {
     var id = entry.id || _newId();
     var item = Object.assign({}, entry, { id: id });
+    // Ensure userId is set for ownership tracking
+    if (!item.userId && typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+      item.userId = Auth.getUserId();
+    }
     try {
       await _persist('entries', id, item);
       var idx = _state.entries.findIndex(function(e) { return e.id === id; });

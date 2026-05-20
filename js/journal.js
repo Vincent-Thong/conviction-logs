@@ -1,92 +1,175 @@
 /* journal.js */
 var editingEntryId = null, searchTerm = '', typeFilter = 'all', viewTab = '';
 var entryVisToggle = null;
+var editorInstance = null;
+
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// Convert HTML table (from Excel paste) to Markdown-style table
-function htmlTableToMarkdown(html) {
-  var parser = new DOMParser();
-  var doc = parser.parseFromString(html, 'text/html');
-  var tables = doc.querySelectorAll('table');
-  if (!tables.length) return null;
-  
-  var result = [];
-  tables.forEach(function(table) {
-    var rows = table.querySelectorAll('tr');
-    if (!rows.length) return;
-    
-    var markdownRows = [];
-    var maxCols = 0;
-    
-    // First pass: find max columns
-    rows.forEach(function(tr) {
-      var cells = tr.querySelectorAll('td, th');
-      if (cells.length > maxCols) maxCols = cells.length;
-    });
-    
-    rows.forEach(function(tr, rowIdx) {
-      var cells = Array.from(tr.querySelectorAll('td, th'));
-      var cellTexts = [];
-      
-      for (var i = 0; i < maxCols; i++) {
-        var cell = cells[i];
-        var text = cell ? cell.textContent.trim().replace(/\|/g, '\\|') : '';
-        cellTexts.push(text);
+function initRichTextEditor() {
+  var editor = document.getElementById('entry-editor');
+  var toolbar = document.getElementById('entry-toolbar');
+  var hiddenInput = document.getElementById('entry-body');
+
+  if (!editor || !toolbar) return;
+
+  // Toolbar button handlers
+  toolbar.querySelectorAll('.toolbar-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var cmd = btn.dataset.cmd;
+
+      if (cmd === 'link') {
+        var url = prompt('Enter URL:', 'https://');
+        if (url) document.execCommand('createLink', false, url);
+      } else if (cmd === 'table') {
+        insertTable();
+      } else if (cmd === 'chart') {
+        insertChart();
+      } else if (cmd === 'h2') {
+        document.execCommand('formatBlock', false, 'H2');
+      } else {
+        document.execCommand(cmd, false, null);
       }
-      
-      var rowStr = '| ' + cellTexts.join(' | ') + ' |';
-      markdownRows.push(rowStr);
-      
-      // Add separator after header row
-      if (rowIdx === 0) {
-        var separator = '| ' + Array(maxCols).fill('---').join(' | ') + ' |';
-        markdownRows.push(separator);
-      }
+      editor.focus();
+      updateToolbarState();
     });
-    
-    if (markdownRows.length) {
-      result.push(markdownRows.join('\n'));
-    }
   });
-  
-  return result.length ? result.join('\n\n') : null;
+
+  // Update toolbar state on selection change
+  editor.addEventListener('keyup', updateToolbarState);
+  editor.addEventListener('mouseup', updateToolbarState);
+  editor.addEventListener('input', function() {
+    hiddenInput.value = editor.innerHTML;
+  });
+
+  editorInstance = { editor: editor, toolbar: toolbar, hiddenInput: hiddenInput };
 }
 
-// Handle paste event for Excel table conversion
-function handlePasteEvent(e) {
-  var clipboardData = e.clipboardData || window.clipboardData;
-  if (!clipboardData) return;
-  
-  var htmlData = clipboardData.getData('text/html');
-  if (!htmlData || !htmlData.includes('<table')) return;
-  
-  var markdown = htmlTableToMarkdown(htmlData);
-  if (!markdown) return;
-  
-  e.preventDefault();
-  
-  var textarea = e.target;
-  var start = textarea.selectionStart;
-  var end = textarea.selectionEnd;
-  var value = textarea.value;
-  
-  // Insert markdown table at cursor position
-  textarea.value = value.substring(0, start) + '\n\n' + markdown + '\n\n' + value.substring(end);
-  
-  // Update cursor position
-  var newPos = start + markdown.length + 4; // +4 for newlines
-  textarea.setSelectionRange(newPos, newPos);
-  
-  // Trigger input event for any listeners
-  var event = document.createEvent('HTMLEvents');
-  event.initEvent('input', true, false);
-  textarea.dispatchEvent(event);
+function updateToolbarState() {
+  if (!editorInstance || !editorInstance.toolbar) return;
+
+  editorInstance.toolbar.querySelectorAll('.toolbar-btn').forEach(function(btn) {
+    var cmd = btn.dataset.cmd;
+    if (['bold', 'italic', 'underline'].indexOf(cmd) !== -1) {
+      if (document.queryCommandState(cmd)) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
+  });
+}
+
+function insertTable() {
+  var editor = document.getElementById('entry-editor');
+  if (!editor) return;
+
+  var rows = parseInt(prompt('Number of rows (2-10):', '3')) || 3;
+  var cols = parseInt(prompt('Number of columns (2-6):', '3')) || 3;
+
+  rows = Math.max(2, Math.min(10, rows));
+  cols = Math.max(2, Math.min(6, cols));
+
+  var html = '<table contenteditable="true"><tbody>';
+  for (var i = 0; i < rows; i++) {
+    html += '<tr>';
+    for (var j = 0; j < cols; j++) {
+      if (i === 0) {
+        html += '<th>Header ' + (j+1) + '</th>';
+      } else {
+        html += '<td>Cell ' + (i+1) + ',' + (j+1) + '</td>';
+      }
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table><p><br/></p>';
+
+  document.execCommand('insertHTML', false, html);
+}
+
+function insertChart() {
+  var editor = document.getElementById('entry-editor');
+  if (!editor) return;
+
+  var chartId = 'chart_' + Date.now();
+  var chartType = prompt('Chart type (bar, line, pie):', 'bar') || 'bar';
+  var labelsStr = prompt('Labels (comma-separated):', 'Q1,Q2,Q3,Q4') || 'Q1,Q2,Q3,Q4';
+  var dataStr = prompt('Data values (comma-separated):', '10,20,15,25') || '10,20,15,25';
+
+  var labels = labelsStr.split(',').map(function(s) { return s.trim(); });
+  var data = dataStr.split(',').map(function(s) { return parseFloat(s.trim()) || 0; });
+
+  var containerId = chartId + '_container';
+  var canvasId = chartId + '_canvas';
+
+  var html = '<div class="chart-container" data-chart-id="' + chartId + '" data-type="' + chartType + '" data-labels="' + escHtml(labels.join(',')) + '" data-data="' + data.join(',') + '">' +
+    '<canvas id="' + canvasId + '" width="400" height="200"></canvas>' +
+    '</div><p><br/></p>';
+
+  document.execCommand('insertHTML', false, html);
+
+  // Render chart after insertion
+  setTimeout(function() {
+    renderChartInEditor(canvasId, chartType, labels, data);
+  }, 100);
+}
+
+function renderChartInEditor(canvasId, type, labels, data) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas || typeof Chart === 'undefined') return;
+
+  var ctx = canvas.getContext('2d');
+  var colors = {
+    bar: 'rgba(197, 168, 76, 0.7)',
+    line: 'rgba(197, 168, 76, 1)',
+    pie: ['rgba(197, 168, 76, 0.8)', 'rgba(62, 207, 142, 0.8)', 'rgba(240, 96, 128, 0.8)', 'rgba(100, 150, 200, 0.8)']
+  };
+
+  new Chart(ctx, {
+    type: type,
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Data',
+        data: data,
+        backgroundColor: type === 'pie' ? colors.pie : colors[type],
+        borderColor: type === 'line' ? colors.line : '#c5a84c',
+        borderWidth: 2,
+        fill: type === 'line'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, labels: { color: '#c9c9c9' } }
+      },
+      scales: type !== 'pie' ? {
+        y: { beginAtZero: true, ticks: { color: '#c9c9c9' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+        x: { ticks: { color: '#c9c9c9' }, grid: { display: false } }
+      } : {}
+    }
+  });
+}
+
+function loadContentIntoEditor(content) {
+  var editor = document.getElementById('entry-editor');
+  if (!editor) return;
+  editor.innerHTML = content || '';
+  if (editorInstance && editorInstance.hiddenInput) {
+    editorInstance.hiddenInput.value = content || '';
+  }
+}
+
+function getContentFromEditor() {
+  var editor = document.getElementById('entry-editor');
+  return editor ? editor.innerHTML : '';
 }
 
 function openNewEntry(id) {
   if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { window.location.href = 'login.html'; return; }
   editingEntryId = id || null;
-  ['entry-title','entry-ticker','entry-tags','entry-body'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
+  ['entry-title','entry-ticker','entry-tags'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
   document.getElementById('entry-type').value     = 'thesis';
   document.getElementById('entry-exchange').value = '';
   document.getElementById('entry-date').value     = new Date().toISOString().slice(0, 10);
@@ -96,29 +179,38 @@ function openNewEntry(id) {
   if (id) {
     var e = Store.getEntries().find(function(x) { return x.id === id; });
     if (e) {
+      // Verify ownership before allowing edit
+      if (!Store.isOwner(e)) {
+        alert('You can only edit your own entries.');
+        return;
+      }
       document.getElementById('entry-modal-title').textContent = 'Edit Entry';
       document.getElementById('entry-title').value    = e.title  || '';
       document.getElementById('entry-type').value     = e.type   || 'thesis';
       document.getElementById('entry-ticker').value   = e.ticker || '';
       document.getElementById('entry-exchange').value = e.exchange || '';
       document.getElementById('entry-date').value     = e.date   || '';
-      document.getElementById('entry-body').value     = e.body   || '';
       document.getElementById('entry-tags').value     = (e.tags || []).join(', ');
       setConvictionPicker('entry-conviction-picker', e.conviction);
       initPublic = e.isPublic || false;
+      loadContentIntoEditor(e.body || '');
     }
+  } else {
+    loadContentIntoEditor('');
   }
   entryVisToggle = makeVisibilityToggle('entry-visibility', initPublic);
   document.getElementById('entry-modal').style.display = 'flex';
+  setTimeout(initRichTextEditor, 50);
 }
 
 async function saveEntry() {
   var title = document.getElementById('entry-title').value.trim();
   if (!title) { alert('Title is required.'); return; }
-  var body = document.getElementById('entry-body').value.trim();
+  var body = getContentFromEditor().trim();
   if (!body)  { alert('Entry body is required.'); return; }
   var entry = {
     id:         editingEntryId,
+    userId:     typeof Auth !== 'undefined' ? Auth.getUserId() : null,
     title:      title,
     type:       document.getElementById('entry-type').value,
     ticker:     document.getElementById('entry-ticker').value.trim().toUpperCase() || null,
@@ -153,7 +245,7 @@ function viewEntry(id) {
   if (!e) return;
   var isOwn = Store.isOwner(e);
   document.getElementById('view-title').textContent = e.title;
-  document.getElementById('view-body').textContent  = e.body;
+  document.getElementById('view-body').innerHTML  = e.body;
   document.getElementById('view-meta').innerHTML = [
     '<span>' + formatDate(e.date) + '</span>',
     '<span class="badge ' + typeBadgeClass(e.type) + '">' + e.type + '</span>',
@@ -178,7 +270,65 @@ function viewEntry(id) {
   var editBtn = document.getElementById('view-edit-btn');
   if (isOwn) { editBtn.style.display = 'inline-flex'; editBtn.onclick = function() { closeModal('view-modal'); openNewEntry(id); }; }
   else        { editBtn.style.display = 'none'; }
+
+  // Render charts in viewed entry
+  setTimeout(function() { renderChartsInView(); }, 100);
+
   document.getElementById('view-modal').style.display = 'flex';
+}
+
+function renderChartsInView() {
+  if (typeof Chart === 'undefined') return;
+  var viewBody = document.getElementById('view-body');
+  if (!viewBody) return;
+
+  var chartContainers = viewBody.querySelectorAll('.chart-container');
+  chartContainers.forEach(function(container) {
+    var canvas = container.querySelector('canvas');
+    if (!canvas) return;
+
+    var chartType = container.dataset.type || 'bar';
+    var labels = (container.dataset.labels || '').split(',');
+    var data = (container.dataset.data || '').split(',').map(function(v) { return parseFloat(v) || 0; });
+
+    // Check if chart already rendered
+    if (container.classList.contains('chart-rendered')) return;
+
+    var ctx = canvas.getContext('2d');
+    var colors = {
+      bar: 'rgba(197, 168, 76, 0.7)',
+      line: 'rgba(197, 168, 76, 1)',
+      pie: ['rgba(197, 168, 76, 0.8)', 'rgba(62, 207, 142, 0.8)', 'rgba(240, 96, 128, 0.8)', 'rgba(100, 150, 200, 0.8)']
+    };
+
+    new Chart(ctx, {
+      type: chartType,
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Data',
+          data: data,
+          backgroundColor: chartType === 'pie' ? colors.pie : colors[chartType],
+          borderColor: chartType === 'line' ? colors.line : '#c5a84c',
+          borderWidth: 2,
+          fill: chartType === 'line'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, labels: { color: '#c9c9c9' } }
+        },
+        scales: chartType !== 'pie' ? {
+          y: { beginAtZero: true, ticks: { color: '#c9c9c9' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+          x: { ticks: { color: '#c9c9c9' }, grid: { display: false } }
+        } : {}
+      }
+    });
+
+    container.classList.add('chart-rendered');
+  });
 }
 
 function render() {

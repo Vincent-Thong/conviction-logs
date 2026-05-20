@@ -159,8 +159,7 @@ var Messages = (function() {
       // Create notification for receiver
       if (typeof Notifications !== 'undefined') {
         Notifications.create(_activeUserId, 'message', Auth.getUserId(), msg.id, 'message');
-      }
-      // Update conv list
+      }      // Update conv list
       await loadConversations();
     }
   }
@@ -200,7 +199,7 @@ var Messages = (function() {
     if (!query.trim()) { results.innerHTML = ''; return; }
 
     var q = query.toLowerCase();
-    // Use window._profiles which is synced with Store's _profiles
+        // Use window._profiles which is synced with Store's _profiles
     var allProfiles = Object.entries(window._profiles || {})
       .filter(function(e) { return e[0] !== Auth.getUserId(); })
       .filter(function(e) {

@@ -22,9 +22,9 @@ var Share = (function() {
         var orig = btn.textContent;
         btn.textContent = 'Copied!';
         btn.style.color = 'var(--green)';
-        setTimeout(function() { 
-          btn.textContent = orig; 
-          btn.style.color = ''; 
+        setTimeout(function() {
+          btn.textContent = orig;
+          btn.style.color = '';
         }, 2000);
       }
     } catch (e) {
@@ -35,12 +35,12 @@ var Share = (function() {
       ta.select();
       document.execCommand('copy');
       document.body.removeChild(ta);
-      if (btn) { 
+      if (btn) {
         var origText = btn.textContent;
-        btn.textContent = 'Copied!'; 
-        setTimeout(function() { 
-          btn.textContent = origText; 
-        }, 2000); 
+        btn.textContent = 'Copied!';
+        setTimeout(function() {
+          btn.textContent = origText;
+        }, 2000);
       }
     }
   }
