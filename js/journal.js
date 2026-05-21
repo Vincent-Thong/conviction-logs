@@ -99,6 +99,9 @@ function initRichTextEditor() {
 
   if (!editor || !toolbar) return;
 
+  // Attach paste handler for Excel table conversion
+  editor.addEventListener('paste', handlePasteEvent);
+
   // Toolbar button handlers
   toolbar.querySelectorAll('.toolbar-btn').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
