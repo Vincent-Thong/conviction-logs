@@ -107,15 +107,21 @@ var Auth = (function() {
 
     try {
       var raw = localStorage.getItem('cl_session');
+      console.log('[Auth] Session from localStorage:', raw ? 'found' : 'not found');
       if (!raw) return null;
       var stored = JSON.parse(raw);
-      if (!stored || !stored.access_token) return null;
+      if (!stored || !stored.access_token) {
+        console.warn('[Auth] Invalid session data');
+        return null;
+      }
       if (stored.expires_at && stored.expires_at < Date.now() / 1000) {
+        console.log('[Auth] Session expired, attempting refresh');
         if (stored.refresh_token) await _refreshSession(stored.refresh_token);
         else _saveSession(null);
       } else {
         _session = stored;
         _user    = stored.user;
+        console.log('[Auth] Session restored for user:', _user ? _user.id : 'unknown');
         _updateNavUI();
       }
     } catch (e) {

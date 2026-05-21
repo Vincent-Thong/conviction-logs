@@ -136,7 +136,10 @@ function _newId() { return Date.now().toString(36) + Math.random().toString(36).
 async function StoreInit(onReady) {
   console.log('[Store] StoreInit…');
   _setSyncDot('syncing');
-  if (typeof Auth !== 'undefined') await Auth.init();
+  if (typeof Auth !== 'undefined') {
+    await Auth.init();
+    console.log('[Store] Auth initialized, isLoggedIn:', Auth.isLoggedIn());
+  }
   if (typeof Follows !== 'undefined') await Follows.load();
 
   try {

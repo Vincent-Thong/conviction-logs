@@ -5,6 +5,93 @@ var editorInstance = null;
 
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// Convert HTML table (from Excel paste) to Markdown-style table
+function htmlTableToMarkdown(html) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(html, 'text/html');
+  var tables = doc.querySelectorAll('table');
+  if (!tables.length) return null;
+  
+  var result = [];
+  tables.forEach(function(table) {
+    var rows = table.querySelectorAll('tr');
+    if (!rows.length) return;
+    
+    var markdownRows = [];
+    var maxCols = 0;
+    
+    // First pass: find max columns
+    rows.forEach(function(tr) {
+      var cells = tr.querySelectorAll('td, th');
+      if (cells.length > maxCols) maxCols = cells.length;
+    });
+    
+    rows.forEach(function(tr, rowIdx) {
+      var cells = Array.from(tr.querySelectorAll('td, th'));
+      var cellTexts = [];
+      
+      for (var i = 0; i < maxCols; i++) {
+        var cell = cells[i];
+        var text = cell ? cell.textContent.trim().replace(/\|/g, '\\|') : '';
+        cellTexts.push(text);
+      }
+      
+      var rowStr = '| ' + cellTexts.join(' | ') + ' |';
+      markdownRows.push(rowStr);
+      
+      // Add separator after header row
+      if (rowIdx === 0) {
+        var separator = '| ' + Array(maxCols).fill('---').join(' | ') + ' |';
+        markdownRows.push(separator);
+      }
+    });
+    
+    if (markdownRows.length) {
+      result.push(markdownRows.join('\n'));
+    }
+  });
+  
+  return result.length ? result.join('\n\n') : null;
+}
+
+// Handle paste event for Excel table conversion
+function handlePasteEvent(e) {
+  var clipboardData = e.clipboardData || window.clipboardData;
+  if (!clipboardData) return;
+  
+  var htmlData = clipboardData.getData('text/html');
+  if (!htmlData || !htmlData.includes('<table')) return;
+  
+  var markdown = htmlTableToMarkdown(htmlData);
+  if (!markdown) return;
+  
+  e.preventDefault();
+  
+  var editor = document.getElementById('entry-editor');
+  if (!editor) return;
+  
+  // Insert markdown table at cursor position or append
+  var selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    var range = selection.getRangeAt(0);
+    var textNode = document.createTextNode('\n\n' + markdown + '\n\n');
+    range.insertNode(textNode);
+    range.collapse(false);
+  } else {
+    editor.innerHTML += '\n\n' + markdown + '\n\n';
+  }
+  
+  // Update hidden input
+  if (editorInstance && editorInstance.hiddenInput) {
+    editorInstance.hiddenInput.value = editor.innerHTML;
+  }
+  
+  // Trigger input event
+  var event = document.createEvent('HTMLEvents');
+  event.initEvent('input', true, false);
+  editor.dispatchEvent(event);
+}
+
 function initRichTextEditor() {
   var editor = document.getElementById('entry-editor');
   var toolbar = document.getElementById('entry-toolbar');
@@ -397,10 +484,10 @@ document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(btn
   btn.addEventListener('click', function() { document.querySelectorAll('#entry-conviction-picker .cpip').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); });
 });
 
-// Attach paste handler to entry body textarea
-var entryBodyEl = document.getElementById('entry-body');
-if (entryBodyEl) {
-  entryBodyEl.addEventListener('paste', handlePasteEvent);
+// Attach paste handler to entry editor (rich text)
+var entryEditorEl = document.getElementById('entry-editor');
+if (entryEditorEl) {
+  entryEditorEl.addEventListener('paste', handlePasteEvent);
 }
 
 var searchEl = document.getElementById('journal-search');

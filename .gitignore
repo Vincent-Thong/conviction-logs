@@ -1,1 +1,18 @@
-(js/auth.js, js/follows.js, js/journal.js, js/portfolio.js, js/watchlist.js are all source code files, and there are no build artifacts, dependencies, or temporary files in the changes)
+```
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+```
