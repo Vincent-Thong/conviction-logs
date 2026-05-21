@@ -5,6 +5,14 @@ var editorInstance = null;
 
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// Strip HTML tags and decode entities for plain text display
+function stripHtmlTags(html) {
+  if (!html) return '';
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
+
 // Convert HTML table (from Excel paste) to Markdown-style table
 function htmlTableToMarkdown(html) {
   var parser = new DOMParser();
@@ -339,7 +347,8 @@ function viewEntry(id) {
   if (!e) return;
   var isOwn = Store.isOwner(e);
   document.getElementById('view-title').textContent = e.title;
-  document.getElementById('view-body').innerHTML  = e.body;
+  // Render markdown body using marked library
+  document.getElementById('view-body').innerHTML  = (typeof marked !== 'undefined') ? marked.parse(e.body || '') : escHtml(e.body || '');
   document.getElementById('view-meta').innerHTML = [
     '<span>' + formatDate(e.date) + '</span>',
     '<span class="badge ' + typeBadgeClass(e.type) + '">' + e.type + '</span>',
@@ -455,6 +464,7 @@ function render() {
     var isOwn    = Store.isOwner(e);
     var profile  = Store.getProfile(e.userId);
     var authorName = profile.displayName || 'Anonymous';
+    var excerptText = stripHtmlTags(e.body).substring(0, 200);
     return '<div class="journal-card" onclick="viewEntry(\'' + e.id + '\')">' +
       '<div class="journal-card-top">' +
         '<span class="badge ' + typeBadgeClass(e.type) + '">' + e.type + '</span>' +
@@ -466,7 +476,7 @@ function render() {
         '<span class="journal-card-date">' + formatDate(e.date) + '</span>' +
       '</div>' +
       '<div class="journal-card-title">' + escHtml(e.title) + '</div>' +
-      '<div class="journal-card-excerpt">' + escHtml(e.body) + '</div>' +
+      '<div class="journal-card-excerpt">' + escHtml(excerptText) + (stripHtmlTags(e.body).length > 200 ? '...' : '') + '</div>' +
       '<div class="journal-card-footer">' +
         (e.tags || []).map(function(t) { return '<span class="tag">' + escHtml(t) + '</span>'; }).join('') +
       '</div>' +
