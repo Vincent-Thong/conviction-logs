@@ -126,7 +126,25 @@ function initRichTextEditor() {
       } else if (cmd === 'chart') {
         insertChart();
       } else if (cmd === 'h2') {
-        document.execCommand('formatBlock', false, 'H2');
+        // Toggle between H2 and paragraph
+        var selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          var range = selection.getRangeAt(0);
+          var block = range.startContainer;
+          // Find the block element
+          while (block && block.nodeType !== 1) {
+            block = block.parentNode;
+          }
+          // Check if we're in an H2
+          var isInH2 = block && (block.tagName === 'H2' || (block.parentElement && block.parentElement.tagName === 'H2'));
+          if (isInH2) {
+            document.execCommand('formatBlock', false, 'P');
+          } else {
+            document.execCommand('formatBlock', false, 'H2');
+          }
+        } else {
+          document.execCommand('formatBlock', false, 'H2');
+        }
       } else {
         document.execCommand(cmd, false, null);
       }
@@ -159,6 +177,14 @@ function updateToolbarState() {
     var cmd = btn.dataset.cmd;
     if (['bold', 'italic', 'underline'].indexOf(cmd) !== -1) {
       if (document.queryCommandState(cmd)) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    } else if (cmd === 'h2') {
+      // Check if current selection is in an H2 block
+      var value = document.queryCommandValue('formatBlock');
+      if (value && (value.toLowerCase() === 'h2' || value === 'H2')) {
         btn.classList.add('active');
       } else {
         btn.classList.remove('active');
