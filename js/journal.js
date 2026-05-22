@@ -2,6 +2,7 @@
 var editingEntryId = null, searchTerm = '', typeFilter = 'all', viewTab = '';
 var entryVisToggle = null;
 var editorInstance = null;
+var currentEditorMode = 'rich'; // 'rich' or 'markdown'
 
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -104,6 +105,7 @@ function initRichTextEditor() {
   var editor = document.getElementById('entry-editor');
   var toolbar = document.getElementById('entry-toolbar');
   var hiddenInput = document.getElementById('entry-body');
+  var mdEditor = document.getElementById('entry-editor-md');
 
   if (!editor || !toolbar) return;
 
@@ -140,7 +142,14 @@ function initRichTextEditor() {
     hiddenInput.value = editor.innerHTML;
   });
 
-  editorInstance = { editor: editor, toolbar: toolbar, hiddenInput: hiddenInput };
+  // Markdown editor input handler
+  if (mdEditor) {
+    mdEditor.addEventListener('input', function() {
+      hiddenInput.value = markdownToHtml(mdEditor.value);
+    });
+  }
+
+  editorInstance = { editor: editor, toolbar: toolbar, hiddenInput: hiddenInput, mdEditor: mdEditor };
 }
 
 function updateToolbarState() {
@@ -252,15 +261,93 @@ function renderChartInEditor(canvasId, type, labels, data) {
 
 function loadContentIntoEditor(content) {
   var editor = document.getElementById('entry-editor');
-  if (!editor) return;
-  editor.innerHTML = content || '';
+  var mdEditor = document.getElementById('entry-editor-md');
+  if (!editor || !mdEditor) return;
+  
+  if (currentEditorMode === 'markdown') {
+    // Convert HTML to markdown for display in MD editor
+    mdEditor.value = htmlToMarkdown(content || '');
+  } else {
+    editor.innerHTML = content || '';
+  }
   if (editorInstance && editorInstance.hiddenInput) {
     editorInstance.hiddenInput.value = content || '';
   }
 }
 
+// Simple HTML to Markdown conversion
+function htmlToMarkdown(html) {
+  if (!html) return '';
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  
+  // Convert headings
+  tmp.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(function(h) {
+    var level = h.tagName.charAt(1);
+    var prefix = Array(parseInt(level)).join('#') + '# ';
+    h.outerHTML = prefix + h.textContent + '\n';
+  });
+  
+  // Convert bold
+  tmp.querySelectorAll('strong, b').forEach(function(el) {
+    el.outerHTML = '**' + el.textContent + '**';
+  });
+  
+  // Convert italic
+  tmp.querySelectorAll('em, i').forEach(function(el) {
+    el.outerHTML = '*' + el.textContent + '*';
+  });
+  
+  // Convert links
+  tmp.querySelectorAll('a').forEach(function(el) {
+    el.outerHTML = '[' + el.textContent + '](' + (el.href || '') + ')';
+  });
+  
+  // Convert lists
+  tmp.querySelectorAll('ul li').forEach(function(li) {
+    li.outerHTML = '- ' + li.textContent + '\n';
+  });
+  tmp.querySelectorAll('ol li').forEach(function(li) {
+    li.outerHTML = '1. ' + li.textContent + '\n';
+  });
+  
+  // Convert tables to markdown
+  tmp.querySelectorAll('table').forEach(function(table) {
+    var mdTable = htmlTableToMarkdown('<table>' + table.innerHTML + '</table>');
+    if (mdTable) table.outerHTML = '\n' + mdTable + '\n';
+  });
+  
+  // Get text and clean up
+  var text = tmp.textContent || tmp.innerText || '';
+  text = text.replace(/\n\s*\n/g, '\n\n').trim();
+  return text;
+}
+
+// Convert Markdown to HTML
+function markdownToHtml(md) {
+  if (!md) return '';
+  if (typeof marked !== 'undefined') {
+    return marked.parse(md);
+  }
+  // Fallback: basic markdown parsing
+  return md
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+    .replace(/\*(.*)\*/gim, '<em>$1</em>')
+    .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2">$1</a>')
+    .replace(/^- (.*$)/gim, '<li>$1</li>')
+    .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+    .replace(/\n/gim, '<br>');
+}
+
 function getContentFromEditor() {
   var editor = document.getElementById('entry-editor');
+  var mdEditor = document.getElementById('entry-editor-md');
+  if (currentEditorMode === 'markdown' && mdEditor) {
+    return markdownToHtml(mdEditor.value);
+  }
   return editor ? editor.innerHTML : '';
 }
 
@@ -303,6 +390,45 @@ function openNewEntry(id) {
   entryVisToggle = makeVisibilityToggle('entry-visibility', initPublic);
   document.getElementById('entry-modal').style.display = 'flex';
   setTimeout(initRichTextEditor, 50);
+}
+
+// Set editor mode (rich text or markdown)
+function setEditorMode(mode) {
+  currentEditorMode = mode;
+  var richBtn = document.getElementById('mode-rich-text');
+  var mdBtn = document.getElementById('mode-markdown');
+  var richEditor = document.getElementById('entry-editor');
+  var mdEditor = document.getElementById('entry-editor-md');
+  var toolbar = document.getElementById('entry-toolbar');
+  
+  if (mode === 'markdown') {
+    // Switch to markdown mode
+    richBtn.classList.remove('active');
+    mdBtn.classList.add('active');
+    richEditor.style.display = 'none';
+    mdEditor.style.display = 'block';
+    if (toolbar) toolbar.style.display = 'none';
+    
+    // Convert current content to markdown
+    var content = richEditor.innerHTML;
+    mdEditor.value = htmlToMarkdown(content);
+  } else {
+    // Switch to rich text mode
+    mdBtn.classList.remove('active');
+    richBtn.classList.add('active');
+    mdEditor.style.display = 'none';
+    richEditor.style.display = 'block';
+    if (toolbar) toolbar.style.display = 'flex';
+    
+    // Convert markdown to HTML
+    var mdContent = mdEditor.value;
+    richEditor.innerHTML = markdownToHtml(mdContent);
+  }
+  
+  // Update hidden input
+  if (editorInstance && editorInstance.hiddenInput) {
+    editorInstance.hiddenInput.value = getContentFromEditor();
+  }
 }
 
 async function saveEntry() {
