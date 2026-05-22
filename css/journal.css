@@ -332,6 +332,41 @@
   gap: 8px;
 }
 
+.editor-mode-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.mode-toggle-btn {
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+
+.mode-toggle-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.mode-toggle-btn.active {
+  background: var(--gold-glow);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+#mode-markdown.active {
+  background: rgba(62, 207, 142, 0.15);
+  border-color: #3ecf8e;
+  color: #3ecf8e;
+}
+
 .text-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -448,6 +483,32 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+}
+
+.markdown-editor {
+  min-height: 220px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 16px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color var(--duration) var(--ease);
+  resize: vertical;
+}
+
+.markdown-editor:focus {
+  border-color: var(--gold);
+}
+
+.markdown-editor::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
 }
 
 /* Table/Chart insertion dialog */

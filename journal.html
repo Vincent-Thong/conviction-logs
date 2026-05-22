@@ -149,6 +149,10 @@
         <div class="form-group">
           <label>Entry *</label>
           <div class="toolbar-wrapper">
+            <div class="editor-mode-toggle">
+              <button type="button" class="mode-toggle-btn active" id="mode-rich-text" onclick="setEditorMode('rich')">Rich Text</button>
+              <button type="button" class="mode-toggle-btn" id="mode-markdown" onclick="setEditorMode('markdown')">Markdown</button>
+            </div>
             <div class="text-toolbar" id="entry-toolbar">
               <button type="button" class="toolbar-btn" data-cmd="bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
               <button type="button" class="toolbar-btn" data-cmd="italic" title="Italic (Ctrl+I)"><em>I</em></button>
@@ -163,6 +167,7 @@
               <button type="button" class="toolbar-btn" data-cmd="chart" title="Insert Chart">📊 Chart</button>
             </div>
             <div id="entry-editor" class="rich-text-editor" contenteditable="true" placeholder="Write your thesis, observations, or notes here…"></div>
+            <textarea id="entry-editor-md" class="markdown-editor" style="display:none;" placeholder="Write in Markdown format..."></textarea>
           </div>
           <input type="hidden" id="entry-body" />
         </div>
