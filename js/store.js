@@ -101,18 +101,29 @@ var db = (function() {
       data:       payload,
       user_id:    Auth.getUserId(),
       is_public:  data.isPublic || false,
-      updated_at: new Date().toISOString(),
     };
 
     var headers = getHeaders(true);
-    headers['Prefer'] = 'resolution=merge-duplicates,return=minimal';
+    headers['Prefer'] = 'resolution=merge-duplicates,return=representation';
+    console.log('[Store.db.upsert] Sending to Supabase:', table, row);
     var res = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
       method: 'POST', headers: headers, body: JSON.stringify(row),
     });
+    console.log('[Store.db.upsert] Response status:', res.status);
     if (!res.ok && res.status !== 204) {
       var err = await res.json().catch(function() { return {}; });
+      console.error('[Store.db.upsert] Error:', err);
       throw new Error('upsert ' + table + ' failed: ' + (err.message || res.status));
     }
+    // Return the inserted/updated row from response if available
+    if (res.ok) {
+      var result = await res.json().catch(function(e) { console.warn('Could not parse response:', e); return null; });
+      if (result && result.length > 0) {
+        console.log('[Store.db.upsert] Received row:', result[0]);
+        return result[0];
+      }
+    }
+    return null;
   }
 
   async function remove(table, id) {
@@ -195,7 +206,14 @@ function _isOwner(item) {
 async function _persist(table, id, item) {
   localStorage.setItem('cl_data_cache_' + table, JSON.stringify(_state[table]));
   _setSyncDot('syncing');
-  await db.upsert(table, id, item);
+  console.log('[Store] Persisting to Supabase:', table, id, item);
+  try {
+    await db.upsert(table, id, item);
+    console.log('[Store] Persist successful');
+  } catch (e) {
+    console.error('[Store] Persist failed:', e);
+    throw e;
+  }
   _setSyncDot('saved');
 }
 
@@ -209,9 +227,11 @@ var Store = {
     var id = pos.id || _newId();
     var item = Object.assign({}, pos, { id: id });
     try {
+      console.log('[Store] Saving position:', item);
       await _persist('positions', id, item);
       var idx = _state.positions.findIndex(function(p) { return p.id === id; });
       if (idx >= 0) _state.positions[idx] = item; else _state.positions.unshift(item);
+      console.log('[Store] Position saved, total positions:', _state.positions.length);
     } catch (e) { console.error(e); _setSyncDot('error'); _showError(e.message); }
   },
 
