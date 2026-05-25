@@ -58,7 +58,15 @@ async function savePosition() {
     conviction: getConvictionPicker('conviction-picker'),
     isPublic:   visibilityToggle ? visibilityToggle.getValue() : false,
   };
-  await Store.savePosition(pos);
+  console.log('[portfolio.js] savePosition called with:', pos);
+  try {
+    await Store.savePosition(pos);
+    console.log('[portfolio.js] savePosition completed');
+  } catch (e) {
+    console.error('[portfolio.js] savePosition error:', e);
+    alert('Failed to save position: ' + e.message);
+    return;
+  }
   closeModal('add-position-modal');
   render();
 }
