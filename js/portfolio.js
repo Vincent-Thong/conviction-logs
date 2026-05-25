@@ -10,7 +10,7 @@ function openAddPosition(id) {
     return; 
   }
   editingId = id || null;
-  ['pos-ticker','pos-name','pos-entry-date','pos-entry-price','pos-target','pos-stop','pos-thesis'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
+  ['pos-ticker','pos-name','pos-entry-date','pos-entry-price','pos-total-units','pos-target','pos-stop','pos-thesis'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
   document.getElementById('pos-exchange').value = 'HK';
   document.getElementById('pos-status').value   = 'open';
   document.querySelectorAll('#conviction-picker .cpip').forEach(function(b) { b.classList.remove('selected'); });
@@ -22,6 +22,7 @@ function openAddPosition(id) {
       document.getElementById('pos-name').value        = pos.name       || '';
       document.getElementById('pos-entry-date').value  = pos.entryDate  || '';
       document.getElementById('pos-entry-price').value = pos.entryPrice || '';
+      document.getElementById('pos-total-units').value = pos.totalUnits || '';
       document.getElementById('pos-target').value      = pos.target     || '';
       document.getElementById('pos-stop').value        = pos.stop       || '';
       document.getElementById('pos-thesis').value      = pos.thesis     || '';
@@ -38,8 +39,10 @@ function openAddPosition(id) {
 async function savePosition() {
   var ticker     = document.getElementById('pos-ticker').value.trim().toUpperCase();
   var entryPrice = parseFloat(document.getElementById('pos-entry-price').value);
+  var totalUnits = parseFloat(document.getElementById('pos-total-units').value);
   if (!ticker)         { alert('Ticker is required.');       return; }
-  if (isNaN(entryPrice)) { alert('Entry price is required.'); return; }
+  if (isNaN(entryPrice)) { alert('Avg Entry Price is required.'); return; }
+  if (isNaN(totalUnits)) { alert('Total Units is required.'); return; }
   var pos = {
     id:         editingId,
     ticker:     ticker,
@@ -47,6 +50,7 @@ async function savePosition() {
     exchange:   document.getElementById('pos-exchange').value,
     entryDate:  document.getElementById('pos-entry-date').value,
     entryPrice: entryPrice,
+    totalUnits: totalUnits,
     target:     parseFloat(document.getElementById('pos-target').value) || null,
     stop:       parseFloat(document.getElementById('pos-stop').value)   || null,
     thesis:     document.getElementById('pos-thesis').value.trim(),
@@ -105,6 +109,7 @@ function render() {
       '<td>' + exchangeBadge(p.exchange) + '</td>' +
       '<td class="mono">' + formatDate(p.entryDate) + '</td>' +
       '<td class="mono">' + (p.entryPrice ?? '—') + '</td>' +
+        + '<td class="mono">' + (p.totalUnits ?? '—') + '</td>' +
       '<td class="mono" style="color:var(--gold)">'  + (p.target ?? '—') + '</td>' +
       '<td class="mono" style="color:var(--red)">'   + (p.stop   ?? '—') + '</td>' +
       '<td>' + convictionBadge(p.conviction) + '</td>' +
