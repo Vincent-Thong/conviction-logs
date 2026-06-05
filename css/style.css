@@ -327,6 +327,10 @@ ul, ol { list-style: none; }
 .stat-delta.positive { color: var(--green); }
 .stat-delta.negative { color: var(--red); }
 
+/* General positive/negative utility classes */
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+
 /* ── Badges / Tags ──────────────────────────────────────────── */
 .badge {
   display: inline-flex;
