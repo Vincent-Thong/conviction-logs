@@ -117,7 +117,7 @@ function render() {
       '<td>' + exchangeBadge(p.exchange) + '</td>' +
       '<td class="mono">' + formatDate(p.entryDate) + '</td>' +
       '<td class="mono">' + (p.entryPrice ?? '—') + '</td>' +
-        + '<td class="mono">' + (p.totalUnits ?? '—') + '</td>' +
+      '<td class="mono">' + (p.totalUnits ?? '—') + '</td>' +
       '<td class="mono" style="color:var(--gold)">'  + (p.target ?? '—') + '</td>' +
       '<td class="mono" style="color:var(--red)">'   + (p.stop   ?? '—') + '</td>' +
       '<td>' + convictionBadge(p.conviction) + '</td>' +
