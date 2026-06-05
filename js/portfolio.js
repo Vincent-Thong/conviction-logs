@@ -160,15 +160,6 @@ document.querySelectorAll('#conviction-picker .cpip').forEach(function(btn) {
   btn.addEventListener('click', function() { document.querySelectorAll('#conviction-picker .cpip').forEach(function(b) { b.classList.remove('selected'); }); btn.classList.add('selected'); });
 });
 
-// Add extra table headers
-document.addEventListener('DOMContentLoaded', function() {
-  var thead = document.querySelector('#portfolio-table thead tr');
-  if (thead) {
-    var thVis    = document.createElement('th'); thVis.textContent    = 'Visibility'; thead.insertBefore(thVis,    thead.children[9]);
-    var thAuthor = document.createElement('th'); thAuthor.textContent = 'Author';     thead.insertBefore(thAuthor, thead.children[10]);
-  }
-});
-
 StoreInit(function() {
   updateAuthNav();
   if (typeof Notifications !== 'undefined' && typeof Auth !== 'undefined' && Auth.isLoggedIn()) Notifications.load().then(function() { Notifications.startPolling(); });
