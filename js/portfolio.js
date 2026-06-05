@@ -3,6 +3,17 @@ var editingId = null, filterStatus = 'all', filterMarket = null;
 var visibilityToggle = null;
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+function toggleClosePriceField() {
+  var status = document.getElementById('pos-status').value;
+  var closePriceGroup = document.getElementById('close-price-group');
+  if (status === 'closed') {
+    closePriceGroup.style.display = 'block';
+  } else {
+    closePriceGroup.style.display = 'none';
+    document.getElementById('pos-close-price').value = '';
+  }
+}
+
 function openAddPosition(id) {
   if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) { 
     sessionStorage.setItem('cl_return_url', window.location.href);
@@ -10,7 +21,7 @@ function openAddPosition(id) {
     return; 
   }
   editingId = id || null;
-  ['pos-ticker','pos-name','pos-entry-date','pos-entry-price','pos-total-units','pos-target','pos-stop','pos-thesis'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
+  ['pos-ticker','pos-name','pos-entry-date','pos-entry-price','pos-total-units','pos-target','pos-stop','pos-thesis','pos-close-price'].forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
   document.getElementById('pos-exchange').value = 'HK';
   document.getElementById('pos-status').value   = 'open';
   document.querySelectorAll('#conviction-picker .cpip').forEach(function(b) { b.classList.remove('selected'); });
@@ -28,11 +39,13 @@ function openAddPosition(id) {
       document.getElementById('pos-thesis').value      = pos.thesis     || '';
       document.getElementById('pos-exchange').value    = pos.exchange   || 'HK';
       document.getElementById('pos-status').value      = pos.status     || 'open';
+      document.getElementById('pos-close-price').value = pos.closePrice || '';
       setConvictionPicker('conviction-picker', pos.conviction);
       initPublic = pos.isPublic || false;
     }
   }
   visibilityToggle = makeVisibilityToggle('pos-visibility', initPublic);
+  toggleClosePriceField();
   document.getElementById('add-position-modal').style.display = 'flex';
 }
 
@@ -40,9 +53,19 @@ async function savePosition() {
   var ticker     = document.getElementById('pos-ticker').value.trim().toUpperCase();
   var entryPrice = parseFloat(document.getElementById('pos-entry-price').value);
   var totalUnits = parseFloat(document.getElementById('pos-total-units').value);
+  var status     = document.getElementById('pos-status').value;
+  var closePrice = parseFloat(document.getElementById('pos-close-price').value);
   if (!ticker)         { alert('Ticker is required.');       return; }
   if (isNaN(entryPrice)) { alert('Avg Entry Price is required.'); return; }
   if (isNaN(totalUnits)) { alert('Total Units is required.'); return; }
+  if (status === 'closed' && isNaN(closePrice)) { alert('Close Price is required for closed positions.'); return; }
+  
+  // Calculate P&L automatically for closed positions
+  var pnl = null;
+  if (status === 'closed' && !isNaN(closePrice)) {
+    pnl = Math.round((closePrice - entryPrice) * totalUnits * 100) / 100;
+  }
+  
   var pos = {
     id:         editingId,
     ticker:     ticker,
@@ -54,9 +77,11 @@ async function savePosition() {
     target:     parseFloat(document.getElementById('pos-target').value) || null,
     stop:       parseFloat(document.getElementById('pos-stop').value)   || null,
     thesis:     document.getElementById('pos-thesis').value.trim(),
-    status:     document.getElementById('pos-status').value,
+    status:     status,
     conviction: getConvictionPicker('conviction-picker'),
     isPublic:   visibilityToggle ? visibilityToggle.getValue() : false,
+    closePrice: status === 'closed' ? closePrice : null,
+    pnl:        pnl
   };
   console.log('[portfolio.js] savePosition called with:', pos);
   try {
@@ -101,7 +126,7 @@ function render() {
 
   var tbody = document.getElementById('portfolio-tbody');
   if (!positions.length) {
-    tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state"><div class="empty-state-icon">📊</div><p class="empty-state-title">No positions</p><p class="empty-state-text">' + (loggedIn ? 'Add your first position.' : 'No public positions yet.') + '</p></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14"><div class="empty-state"><div class="empty-state-icon">📊</div><p class="empty-state-title">No positions</p><p class="empty-state-text">' + (loggedIn ? 'Add your first position.' : 'No public positions yet.') + '</p></div></td></tr>';
     return;
   }
 
@@ -111,6 +136,13 @@ function render() {
     var name    = profile.displayName || 'Anonymous';
     var date    = p.updatedAt || p.createdAt;
     var dateStr = date ? new Date(date).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '';
+
+    // Format P&L with sign and 2 decimal places
+    var pnlDisplay = '—';
+    if (p.pnl != null) {
+      var pnlSign = p.pnl >= 0 ? '+' : '';
+      pnlDisplay = '<span class="' + (p.pnl >= 0 ? 'positive' : 'negative') + '" style="font-family:var(--font-mono)">' + pnlSign + p.pnl.toFixed(2) + '</span>';
+    }
 
     return '<tr>' +
       '<td><span class="ticker">' + escHtml(p.ticker) + '</span>' + (p.name ? '<br><span class="ticker-full">' + escHtml(p.name) + '</span>' : '') + '</td>' +
@@ -122,7 +154,8 @@ function render() {
       '<td class="mono" style="color:var(--red)">'   + (p.stop   ?? '—') + '</td>' +
       '<td>' + convictionBadge(p.conviction) + '</td>' +
       '<td>' + (p.status === 'open' ? '<span class="badge badge-green">Open</span>' : '<span class="badge badge-neutral">Closed</span>') + '</td>' +
-      '<td>' + (p.pnlPct != null ? '<span class="' + (p.pnlPct >= 0 ? 'positive' : 'negative') + '" style="font-family:var(--font-mono)">' + (p.pnlPct >= 0 ? '+' : '') + p.pnlPct + '%</span>' : '—') + '</td>' +
+      '<td class="mono">' + (p.closePrice != null ? p.closePrice : '—') + '</td>' +
+      '<td>' + pnlDisplay + '</td>' +
       '<td>' + (p.isPublic ? '<span title="Public">🌐</span>' : '<span title="Private">🔒</span>') + '</td>' +
       // Author + date
       '<td style="min-width:140px">' +
