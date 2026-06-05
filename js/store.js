@@ -278,6 +278,10 @@ var Store = {
   saveWatchItem: async function(item) {
     var id = item.id || _newId();
     var w = Object.assign({}, item, { id: id });
+    // Ensure userId is set for ownership tracking
+    if (!w.userId && typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+      w.userId = Auth.getUserId();
+    }
     try {
       await _persist('watchlist', id, w);
       var idx = _state.watchlist.findIndex(function(x) { return x.id === id; });
