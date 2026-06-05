@@ -137,11 +137,12 @@ function render() {
     var date    = p.updatedAt || p.createdAt;
     var dateStr = date ? new Date(date).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) : '';
 
-    // Format P&L with sign and 2 decimal places
+    // Format P&L with sign, dollar prefix and comma separators
     var pnlDisplay = '—';
     if (p.pnl != null) {
       var pnlSign = p.pnl >= 0 ? '+' : '';
-      pnlDisplay = '<span class="' + (p.pnl >= 0 ? 'positive' : 'negative') + '" style="font-family:var(--font-mono)">' + pnlSign + p.pnl.toFixed(2) + '</span>';
+      var pnlFormatted = pnlSign + '$' + Math.abs(p.pnl).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      pnlDisplay = '<span class="' + (p.pnl >= 0 ? 'positive' : 'negative') + '" style="font-family:var(--font-mono)">' + pnlFormatted + '</span>';
     }
 
     return '<tr>' +
