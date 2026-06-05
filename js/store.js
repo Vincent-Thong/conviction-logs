@@ -226,6 +226,10 @@ var Store = {
   savePosition: async function(pos) {
     var id = pos.id || _newId();
     var item = Object.assign({}, pos, { id: id });
+    // Ensure userId is set for ownership tracking
+    if (!item.userId && typeof Auth !== 'undefined' && Auth.isLoggedIn()) {
+      item.userId = Auth.getUserId();
+    }
     try {
       console.log('[Store] Saving position:', item);
       await _persist('positions', id, item);
