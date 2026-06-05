@@ -1,12 +1,1 @@
-# Examples 1:
-# Project with only source/config files - no artifacts
-# Expected output: (empty - output nothing)
-
-# Example 2:
-# Project with artifacts like pycache, dist, .env.local, .vscode
-# Expected output includes compiled files, dependencies, env files, editor configs
-
-# Current scenario: Only portfolio.html modified, no build artifacts, dependencies, or temp files
-# This is just a source file modification
-
-# Output: (nothing)
+(js/portfolio.js is just a source file, no build artifacts, dependencies, or temp files in the changes, so output nothing)
