@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alibaba Group (9988.HK) — Investment Thesis</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+  <link rel="stylesheet" href="css/messages.css" />
+  <style>
+    /* Investment Thesis Page Styles */
+    .thesis-page {
+      padding-top: var(--nav-height);
+    }
+    
+    .thesis-header {
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 0;
+    }
+    
+    .thesis-title-block {
+      margin-bottom: 24px;
+    }
+    
+    .thesis-company-name {
+      font-family: var(--font-display);
+      font-size: 2.5rem;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    
+    .thesis-ticker {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      color: var(--gold);
+      letter-spacing: 0.05em;
+    }
+    
+    .thesis-price-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      align-items: center;
+      margin-top: 24px;
+      padding: 20px;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+    
+    .price-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .price-label {
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    
+    .price-value {
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    .price-value.positive { color: var(--green); }
+    .price-value.neutral { color: var(--gold); }
+    
+    .rating-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 16px;
+      background: var(--green-dim);
+      border: 1px solid rgba(62, 207, 142, 0.3);
+      border-radius: 99px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .thesis-section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .thesis-section:last-child {
+      border-bottom: none;
+    }
+    
+    .thesis-section-title {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--gold);
+      display: inline-block;
+    }
+    
+    .thesis-content {
+      font-size: 1rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      max-width: 900px;
+    }
+    
+    .thesis-content p {
+      margin-bottom: 20px;
+    }
+    
+    .thesis-content strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    
+    /* Business Model Diagram */
+    .business-model-diagram {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin: 32px 0;
+      overflow-x: auto;
+    }
+    
+    .bm-header {
+      text-align: center;
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    
+    .bm-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    
+    .bm-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      transition: border-color var(--duration) var(--ease), transform var(--duration) var(--ease);
+    }
+    
+    .bm-box:hover {
+      border-color: var(--gold);
+      transform: translateY(-2px);
+    }
+    
+    .bm-box-title {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+    
+    .bm-box-list {
+      list-style: none;
+    }
+    
+    .bm-box-list li {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 4px 0;
+      padding-left: 16px;
+      position: relative;
+    }
+    
+    .bm-box-list li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: var(--gold);
+    }
+    
+    /* Financial Table */
+    .financial-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+    }
+    
+    .financial-table th,
+    .financial-table td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .financial-table th {
+      background: var(--bg-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
+    
+    .financial-table td {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+    
+    .financial-table tr:hover td {
+      background: var(--bg-hover);
+    }
+    
+    .financial-table .metric-name {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    .financial-table .negative { color: var(--red); }
+    .financial-table .positive { color: var(--green); }
+    
+    /* SOTP Valuation Box */
+    .sotp-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin: 24px 0;
+    }
+    
+    .sotp-title {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      text-align: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .sotp-total {
+      background: var(--bg-card);
+      border: 1px solid var(--gold);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-top: 24px;
+      text-align: center;
+    }
+    
+    .sotp-total-label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    
+    .sotp-total-value {
+      font-family: var(--font-display);
+      font-size: 1.75rem;
+      color: var(--gold);
+    }
+    
+    /* Scenario Matrix */
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 24px 0;
+    }
+    
+    .scenario-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: border-color var(--duration) var(--ease);
+    }
+    
+    .scenario-card.bear { border-color: var(--red); }
+    .scenario-card.base { border-color: var(--gold); }
+    .scenario-card.bull { border-color: var(--green); }
+    
+    .scenario-card:hover {
+      transform: translateY(-2px);
+    }
+    
+    .scenario-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .scenario-title {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      color: var(--text-primary);
+    }
+    
+    .scenario-price {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    
+    .bear .scenario-price { color: var(--red); }
+    .base .scenario-price { color: var(--gold); }
+    .bull .scenario-price { color: var(--green); }
+    
+    .scenario-desc {
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+    
+    /* Catalysts & Risks Grid */
+    .cr-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin: 24px 0;
+    }
+    
+    .cr-column {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+    
+    .cr-column h4 {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .cr-column.positive h4 {
+      border-bottom-color: var(--green);
+    }
+    
+    .cr-column.negative h4 {
+      border-bottom-color: var(--red);
+    }
+    
+    .cr-list {
+      list-style: none;
+    }
+    
+    .cr-list li {
+      padding: 12px 0;
+      padding-left: 24px;
+      position: relative;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .cr-list li:last-child {
+      border-bottom: none;
+    }
+    
+    .positive .cr-list li::before {
+      content: '↑';
+      position: absolute;
+      left: 0;
+      color: var(--green);
+      font-weight: 600;
+    }
+    
+    .negative .cr-list li::before {
+      content: '↓';
+      position: absolute;
+      left: 0;
+      color: var(--red);
+      font-weight: 600;
+    }
+    
+    /* Management Cards */
+    .mgmt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin: 24px 0;
+    }
+    
+    .mgmt-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+    
+    .mgmt-name {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    
+    .mgmt-title {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 16px;
+    }
+    
+    .mgmt-desc {
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+    
+    /* Key Drivers List */
+    .drivers-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 20px 0;
+    }
+    
+    .driver-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    
+    .driver-tag::before {
+      content: '◆';
+      color: var(--gold);
+      font-size: 0.625rem;
+    }
+    
+    @media (max-width: 768px) {
+      .thesis-company-name {
+        font-size: 1.75rem;
+      }
+      
+      .thesis-price-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      
+      .thesis-section-title {
+        font-size: 1.5rem;
+      }
+      
+      .bm-grid,
+      .scenario-grid,
+      .cr-grid,
+      .mgmt-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation ─────────────────────────────────── -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="nav-logo-primary">Conviction Logs</span>
+        <span class="nav-logo-sub">Investment Journal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html"     class="nav-link">Dashboard</a>
+        <a href="portfolio.html" class="nav-link">Portfolio</a>
+        <a href="journal.html"   class="nav-link">Journal</a>
+        <a href="watchlist.html" class="nav-link">Watchlist</a>
+        <a href="settings.html"  class="nav-link">Settings &amp; Profile</a>
+        <a href="admin.html"    class="nav-link" style="color:var(--red);opacity:.6">Admin</a>
+      </div>
+      <div class="nav-actions">
+        <span id="sync-status-dot" title="Checking..." style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#c9a84c;margin-right:4px;flex-shrink:0;transition:background .3s ease"></span>
+        <a href="notifications.html" class="btn btn-ghost btn-sm" id="nav-notif-btn" style="display:none">
+          🔔 <span id="nav-notif-count" class="notif-badge" style="display:none"></span>
+        </a>
+        <a href="messages.html" class="btn btn-ghost btn-sm" id="nav-msg-btn" style="display:none">💬</a>
+        <a href="login.html" id="nav-login-btn" class="btn btn-ghost btn-sm">Sign In</a>
+        <div id="nav-user-menu" class="nav-user-menu">
+          <div class="nav-user-initials" id="nav-user-initials">?</div>
+          <img class="nav-user-avatar" id="nav-user-avatar" src="" alt="" />
+          <span class="nav-user-name" id="nav-user-name"></span>
+          <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main Content ─────────────────────────────────── -->
+  <main class="thesis-page">
+    
+    <!-- Header Section -->
+    <header class="thesis-header">
+      <div class="container">
+        <div class="thesis-title-block">
+          <h1 class="thesis-company-name">Alibaba Group Holding Limited</h1>
+          <div class="thesis-ticker">Ticker: 9988.HK / BABA</div>
+        </div>
+        
+        <div class="thesis-price-bar">
+          <div class="price-item">
+            <span class="price-label">Current Price</span>
+            <span class="price-value">~HK$114.80</span>
+          </div>
+          <div class="price-item">
+            <span class="price-label">Consensus Target</span>
+            <span class="price-value neutral">~HK$145.00</span>
+          </div>
+          <div class="price-item">
+            <span class="price-label">Implied Upside</span>
+            <span class="price-value positive">~26%</span>
+          </div>
+          <div class="price-item">
+            <span class="price-label">Rating</span>
+            <span class="rating-badge">Overweight / Buy</span>
+          </div>
+        </div>
+        
+        <div class="drivers-list">
+          <div class="driver-tag">Cloud / AI Expansion</div>
+          <div class="driver-tag">Quick Commerce Re-acceleration</div>
+          <div class="driver-tag">Share Buybacks &amp; Dividends</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Executive Summary -->
+    <section class="thesis-section">
+      <div class="container">
+        <h2 class="thesis-section-title">Executive Summary &amp; Investment Thesis</h2>
+        <div class="thesis-content">
+          <p>
+            <strong>Alibaba Group Holding Limited (9988.HK)</strong> represents a fundamental transition from a pure domestic Chinese e-commerce giant into an AI-driven infrastructure and cloud ecosystem provider.
+          </p>
+          <p>
+            Despite headwinds in core retail margins due to heavy investments in instant delivery and price competitiveness, Alibaba's core cloud engine (Cloud Intelligence Group) is accelerating rapidly at <strong>+36% YoY</strong>, driven by enterprise adoption of its proprietary AI models (Tongyi Qianwen / Qwen). Managed by co-founders Eddie Wu and Joe Tsai, management has divested non-core physical assets (such as Sun Art and Intime) to streamline capital efficiency and channel massive capital returns to shareholders via aggressive share buybacks and dividends.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Business Model & Economic Moat -->
+    <section class="thesis-section">
+      <div class="container">
+        <h2 class="thesis-section-title">Business Model &amp; Economic Moat</h2>
+        
+        <div class="business-model-diagram">
+          <div class="bm-header">ALIBABA GROUP HOLDING (9988.HK)</div>
+          <div class="bm-grid">
+            <div class="bm-box">
+              <div class="bm-box-title">Taobao &amp; Tmall Group (TTG)</div>
+              <ul class="bm-box-list">
+                <li>Domestic E-Commerce</li>
+                <li>Instant / Quick Commerce</li>
+              </ul>
+            </div>
+            <div class="bm-box">
+              <div class="bm-box-title">Cloud Intelligence Group</div>
+              <ul class="bm-box-list">
+                <li>Public Cloud &amp; Enterprise</li>
+                <li>AI Models &amp; Infra (Qwen)</li>
+              </ul>
+            </div>
+            <div class="bm-box">
+              <div class="bm-box-title">Global Digital Commerce</div>
+              <ul class="bm-box-list">
+                <li>AliExpress, Lazada</li>
+                <li>Trendyol &amp; Miravia</li>
+              </ul>
+            </div>
+            <div class="bm-box">
+              <div class="bm-box-title">Cainiao Smart Logistics</div>
+              <ul class="bm-box-list">
+                <li>Global Logistics Network</li>
+                <li>Cross-border Fulfillment</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div class="thesis-content">
+          <p>
+            <strong>Network Effects &amp; High Switching Costs (E-Commerce):</strong> Taobao and Tmall maintain dominant consumer liquidity in China. While merchant monetization software fees have faced near-term headwinds, Taobao remains the essential channel for consumer brands in East Asia.
+          </p>
+          <p>
+            <strong>Infrastructure Scale (Cloud Intelligence):</strong> Alibaba Cloud commands the largest market share in China's public cloud market, creating high migration switching costs for corporate enterprises, healthcare, and financial institutions deploying AI infrastructure.
+          </p>
+          <p>
+            <strong>Cross-Border Supply Chain Moat (AIDC &amp; Cainiao):</strong> Integrates global selling platforms (AliExpress Choice, Lazada, Trendyol) with Cainiao's global logistics network to offer low-cost, 5-day delivery windows across international markets.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Management & Corporate Governance -->
+    <section class="thesis-section">
+      <div class="container">
+        <h2 class="thesis-section-title">Management &amp; Corporate Governance</h2>
+        
+        <div class="mgmt-grid">
+          <div class="mgmt-card">
+            <div class="mgmt-name">Joseph C. Tsai</div>
+            <div class="mgmt-title">Chairman of the Board</div>
+            <div class="mgmt-desc">
+              Co-founder and former Executive Vice Chairman. Brings deep capital markets expertise, overseeing structural divestitures, corporate simplification, and capital return strategies.
+            </div>
+          </div>
+          
+          <div class="mgmt-card">
+            <div class="mgmt-name">Eddie Yongming Wu</div>
+            <div class="mgmt-title">Director &amp; Chief Executive Officer</div>
+            <div class="mgmt-desc">
+              Co-founder and former CTO of Taobao/Alipay. Assumed the CEO role to pivot company focus directly toward "User First" and "AI-Driven" execution. Under his leadership, non-core physical retail subsidiaries (e.g., Sun Art, Intime) were disposed of to restore business focus on tech and high-margin core commerce.
+            </div>
+          </div>
+        </div>
+        
+        <div class="thesis-content">
+          <p>
+            <strong>Capital Allocation History:</strong> Management has shifted toward institutional shareholder alignment, returning billions via share cancellations and regular dividend distributions.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Financial Trends & Operational Results -->
+    <section class="thesis-section">
+      <div class="container">
+        <h2 class="thesis-section-title">Financial Trends &amp; Operational Results</h2>
+        <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 24px;">Data reflect recent quarters and reported financial periods</p>
+        
+        <table class="financial-table">
+          <thead>
+            <tr>
+              <th>Metric (RMB)</th>
+              <th>Q3 FY2025</th>
+              <th>Q3 FY2026 (Actuals)</th>
+              <th>YoY Change</th>
+              <th>Analytical Takeaway</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="metric-name">Total Revenue</td>
+              <td>RMB 280.15B</td>
+              <td>RMB 284.84B</td>
+              <td class="positive">+2.0% (+9% Like-for-Like*)</td>
+              <td>Excluding disposed physical retail, revenue expanded +9% YoY.</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Cloud Intelligence Revenue</td>
+              <td>RMB 31.8B</td>
+              <td>RMB 43.28B</td>
+              <td class="positive">+36.0%</td>
+              <td>Strong enterprise AI demand acceleration.</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Adjusted EBITA</td>
+              <td>RMB 54.85B</td>
+              <td>RMB 23.40B</td>
+              <td class="negative">(57.0%)</td>
+              <td>Margin compression due to quick commerce &amp; tech investments.</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Operating Cash Flow</td>
+              <td>RMB 70.92B</td>
+              <td>RMB 36.03B</td>
+              <td class="negative">(49.0%)</td>
+              <td>Impacted by elevated CapEx in AI servers &amp; supply chain.</td>
+            </tr>
+            <tr>
+              <td class="metric-name">Non-GAAP Diluted EPS</td>
+              <td>RMB 2.67</td>
+              <td>RMB 0.89</td>
+              <td class="negative">(67.0%)</td>
+              <td>Reflects cycle of aggressive strategic investments.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Multi-Scenario Valuation & Target Price -->
+    <section class="thesis-section">
+      <div class="container">
+        <h2 class="thesis-section-title">Multi-Scenario Valuation &amp; Target Price</h2>
+        <div class="thesis-content">
+          <p>Valuation employs a Sum-of-the-Parts (SOTP) model across core segments:</p>
+        </div>
+        
+        <div class="sotp-box">
+          <div class="sotp-title">Sum-of-the-Parts (SOTP) Valuation Summary</div>
+          
+          <table class="financial-table">
+            <thead>
+              <tr>
+                <th>Segment</th>
+                <th>Valuation Method</th>
+                <th>Implied Enterprise Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="metric-name">Taobao &amp; Tmall Group</td>
+                <td>8.0x NTM EBITA</td>
+                <td>~HK$ 1,450 Billion</td>
+              </tr>
+              <tr>
+                <td class="metric-name">Cloud Intelligence Group</td>
+                <td>5.5x EV/Sales (High Growth)</td>
+                <td>~HK$ 850 Billion</td>
+              </tr>
+              <tr>
+                <td class="metric-name">International Digital (AIDC)</td>
+                <td>2.0x EV/Sales</td>
+                <td>~HK$ 280 Billion</td>
+              </tr>
+              <tr>
+                <td class="metric-name">Cainiao &amp; Other Businesses</td>
+                <td>Multiple on Equity Value</td>
+                <td>~HK$ 160 Billion</td>
+              </tr>
+              <tr>
+                <td class="metric-name">Less: Net Debt / Plus Cash</td>
+                <td>Cash Balance Adjustment</td>
+                <td>~HK$ 380 Billion</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="sotp-total">
+            <div class="sotp-total-label">Total Implied Equity Value</div>
+            <div class="sotp-total-value">HK$ 3,120 Billion | Target Price per Share: ~HK$ 145.00</div>
+          </div>
+        </div>
+        
+        <h3 style="font-family: var(--font-display); font-size: 1.5rem; color: var(--text-primary); margin: 32px 0 24px;">Scenario Matrix</h3>
+        
+        <div class="scenario-grid">
+          <div class="scenario-card bear">
+            <div class="scenario-header">
+              <div class="scenario-title">Bear Case</div>
+              <div class="scenario-price">HK$ 88.00</div>
+            </div>
+            <div class="scenario-desc">
+              Domestic consumer demand weakens further; intense price wars in quick commerce continuously drag consolidated operating profit down; cloud revenue slows below 15%.
+            </div>
+          </div>
+          
+          <div class="scenario-card base">
+            <div class="scenario-header">
+              <div class="scenario-title">Base Case</div>
+              <div class="scenario-price">HK$ 145.00</div>
+            </div>
+            <div class="scenario-desc">
+              Cloud revenue maintains 25–35% growth driven by AI; retail profit margins stabilize as aggressive quick-commerce subsidies taper off; continuous share buybacks boost per-share metrics.
+            </div>
+          </div>
+          
+          <div class="scenario-card bull">
+            <div class="scenario-header">
+              <div class="scenario-title">Bull Case</div>
+              <div class="scenario-price">HK$ 180.00</div>
+            </div>
+            <div class="scenario-desc">
+              AI cloud services unlock operating leverage; AIDC cross-border e-commerce reaches segment profitability ahead of schedule; consumer spending in China undergoes a major macro rebound.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Investment Catalysts & Key Risks -->
+    <section class="thesis-section">
+      <div class="container">
+        <h2 class="thesis-section-title">Investment Catalysts &amp; Key Risks</h2>
+        
+        <div class="cr-grid">
+          <div class="cr-column positive">
+            <h4>Positive Catalysts</h4>
+            <ul class="cr-list">
+              <li>
+                <strong>AI &amp; Cloud Acceleration:</strong> Enterprise migration to Qwen AI models driving sustained 30%+ revenue growth in Alibaba Cloud.
+              </li>
+              <li>
+                <strong>Capital Return Momentum:</strong> Continued repurchases and potential special dividends as non-core assets are fully monetized.
+              </li>
+              <li>
+                <strong>Southbound Stock Connect Flows:</strong> Continued institutional inflows from Mainland China investors trading via HKEX Southbound Connect.
+              </li>
+            </ul>
+          </div>
+          
+          <div class="cr-column negative">
+            <h4>Key Downside Risks</h4>
+            <ul class="cr-list">
+              <li>
+                <strong>Margin Compression from Instant Retail:</strong> Extended price competition against rival platforms reducing short-term group EBITA.
+              </li>
+              <li>
+                <strong>Geopolitical &amp; Tech Restrictions:</strong> Potential expansion of advanced semiconductor hardware export controls affecting cloud computing expansion.
+              </li>
+              <li>
+                <strong>Macroeconomic Sensitivity:</strong> Sluggish discretionary consumer spending in mainland China affecting overall Gross Merchandise Value (GMV).
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-copy">© <span id="footer-year"></span> Conviction Logs</span>
+      <div class="footer-links">
+        <a href="index.html">Dashboard</a>
+        <a href="portfolio.html">Portfolio</a>
+        <a href="journal.html">Journal</a>
+        <a href="watchlist.html">Watchlist</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/store.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    // Set footer year
+    document.getElementById('footer-year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
